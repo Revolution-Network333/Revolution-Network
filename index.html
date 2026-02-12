@@ -985,7 +985,8 @@
             .then(res => res.json())
             .then(data => {
                 if (data.user && data.user.referral_code) {
-                    const referralLink = `${window.location.origin}/register?ref=${data.user.referral_code}`;
+                    const base = `${window.location.origin}${window.location.pathname.includes('/Revolution-Network') ? '/Revolution-Network' : ''}`;
+                    const referralLink = `${base}/register?ref=${data.user.referral_code}`;
                     const input = document.querySelector('.referral-input');
                     if (input) {
                         input.value = referralLink;
