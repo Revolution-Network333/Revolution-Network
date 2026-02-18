@@ -67,7 +67,7 @@ body::before {
 }
 
 .sidebar-header .logo-icon {
-  width: 135%;
+  width: 220%;
   height: auto;
   max-height: 250px;
   object-fit: contain;
