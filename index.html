@@ -2748,6 +2748,11 @@ print(r.json())</code></pre>
                 <div class="page-content">
                     <div class="page-header">
                         <h1 class="page-title">Admin Leaderboard</h1>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input id="admin-search-input" type="text" placeholder="Recherche (username ou email)" 
+                                   style="padding:8px;border:1px solid #374151;border-radius:6px;background:#111827;color:#e5e7eb;min-width:260px;">
+                            <button class="profile-btn" id="admin-search-btn">Rechercher</button>
+                        </div>
                     </div>
                     <table class="data-table" id="admin-leaderboard-table">
                         <thead>
@@ -2806,7 +2811,15 @@ print(r.json())</code></pre>
 
         function initializeAdminLeaderboardPage() {
             const token = localStorage.getItem('token');
-            fetch(`${API_BASE}/api/admin/leaderboard`, { headers: { 'Authorization': `Bearer ${token}` } })
+            const input = document.getElementById('admin-search-input');
+            const btn = document.getElementById('admin-search-btn');
+            if (input && btn) {
+                btn.onclick = () => initializeAdminLeaderboardPage();
+                input.onkeypress = (e) => { if (e.key === 'Enter') initializeAdminLeaderboardPage(); };
+            }
+            const search = input ? input.value.trim() : '';
+            const url = `${API_BASE}/api/admin/leaderboard${search ? `?search=${encodeURIComponent(search)}` : ''}`;
+            fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
             .then(r => r.json())
             .then(data => {
                 const tbody = document.querySelector('#admin-leaderboard-table tbody');
@@ -2943,6 +2956,9 @@ print(r.json())</code></pre>
                         <div><strong>Crédits restants</strong><div>${(u.credits_balance||0)}</div></div>
                         <div><strong>Heures actives</strong><div>${u.active_hours || 0}</div></div>
                         <div><strong>Score final</strong><div>${u.final_airdrop_score || 0}</div></div>
+                        <div><strong>Abonnement</strong><div>${u.subscription && u.subscription.status ? u.subscription.status : '-'}</div></div>
+                        <div><strong>Annulation fin de période</strong><div>${u.subscription && u.subscription.cancel_at_period_end ? 'Oui' : 'Non'}</div></div>
+                        <div><strong>Fin de période</strong><div>${u.subscription && u.subscription.current_period_end ? new Date(u.subscription.current_period_end).toLocaleString() : '-'}</div></div>
                     </div>
                     <div style="margin-top:16px;">
                         <h3>Filleuls</h3>
