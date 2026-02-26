@@ -3572,12 +3572,14 @@ function initializeShopPage() {
                     show('#shop-is-pack', true);
                     if (isPack) {
                         show('#shop-pack-amount', true);
+                        show('#shop-payment-link', true);
                         // Hide unit/qty fields in pack mode to simplify
                         show('#shop-unit-price', false);
                         show('#shop-min-qty', false);
                         show('#shop-max-qty', false);
                     } else {
                         show('#shop-pack-amount', false);
+                        show('#shop-payment-link', false);
                         show('#shop-unit-price', true);
                         show('#shop-min-qty', true);
                         show('#shop-max-qty', true);
