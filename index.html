@@ -4365,7 +4365,7 @@ function initializeShopPage() {
             });
 
             btnCalc.addEventListener('click', async () => {
-                if (!confirm('Êtes-vous sûr de vouloir recalculer l\\'allocation airdrop pour TOUS les utilisateurs ? Cette opération peut prendre du temps.')) return;
+                if (!confirm("Êtes-vous sûr de vouloir recalculer l'allocation airdrop pour TOUS les utilisateurs ? Cette opération peut prendre du temps.")) return;
                 
                 btnCalc.disabled = true;
                 btnCalc.textContent = 'Calcul en cours...';
@@ -4378,7 +4378,7 @@ function initializeShopPage() {
                     const j = await res.json();
                     
                     if (res.ok) {
-                        alert(`Succès ! ${j.message}\\nScore Global: ${j.total_global_score.toFixed(2)}`);
+                        alert(`Succès ! ${j.message}\nScore Global: ${j.total_global_score.toFixed(2)}`);
                         loadParticipants();
                     } else {
                         alert('Erreur: ' + (j.error || 'Inconnue'));
