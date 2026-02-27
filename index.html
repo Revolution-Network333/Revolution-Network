@@ -331,6 +331,11 @@
                 'shop.activate_auto': 'Activer l’Auto‑minage',
                 'shop.buy_now': 'Acheter maintenant',
                 'shop.quantity': 'Quantité',
+                'shop.admin_only': 'Réservé admin',
+                'shop.no_description': 'Aucune description disponible.',
+                'shop.login_required': 'Veuillez vous connecter',
+                'shop.payment.unavailable': 'Lien de paiement indisponible',
+                'shop.payment.unavailable_plan': 'Lien de paiement indisponible pour ce plan. Contactez le support.',
                 'shop.payment.opened': 'Paiement ouvert dans un nouvel onglet',
                 'shop.cost.image_compress': 'Compression image',
                 'shop.cost.http_get': 'HTTP GET (simple)',
@@ -387,6 +392,13 @@
                 'download.faq.q3': 'Airdrop',
                 'download.faq.a3': 'Installez, restez actifs, accumulez des points régulièrement.',
                 'download.quickGuideMessage': 'Ouvrir chrome://extensions/ → Mode développeur → Charger l’extension non empaquetée → dossier chrome-extension',
+                'download.recommended.title': 'Procédure recommandée (ZIP)',
+                'download.recommended.step1': 'Cliquez “Lancer l’installation” pour télécharger l’archive ZIP.',
+                'download.recommended.step2': 'Décompressez l’archive sur votre ordinateur.',
+                'download.recommended.step3': 'Ouvrez chrome://extensions et activez le Mode développeur.',
+                'download.recommended.step4': 'Cliquez “Charger l’extension non empaquetée”.',
+                'download.recommended.step5': 'Sélectionnez le dossier “chrome-extension” décompressé.',
+                'download.recommended.step6': 'Dans le popup de l’extension, connectez‑vous puis appuyez sur ▶.',
                 'tasks.title': 'Airdrop & Tâches',
                 'tasks.validate': 'Valider',
                 'tasks.validated': 'Validée',
@@ -509,6 +521,11 @@
                 'shop.activate_auto': 'Enable Auto‑mining',
                 'shop.buy_now': 'Buy now',
                 'shop.quantity': 'Quantity',
+                'shop.admin_only': 'Admin only',
+                'shop.no_description': 'No description available.',
+                'shop.login_required': 'Please sign in',
+                'shop.payment.unavailable': 'Payment link unavailable',
+                'shop.payment.unavailable_plan': 'Payment link unavailable for this plan. Contact support.',
                 'shop.payment.opened': 'Payment opened in a new tab',
                 'shop.cost.image_compress': 'Image compression',
                 'shop.cost.http_get': 'HTTP GET (simple)',
@@ -565,6 +582,13 @@
                 'download.faq.q3': 'Airdrop',
                 'download.faq.a3': 'Install, stay active, accumulate points regularly.',
                 'download.quickGuideMessage': 'Open chrome://extensions/ → Enable Developer mode → Load unpacked → chrome-extension folder',
+                'download.recommended.title': 'Recommended procedure (ZIP)',
+                'download.recommended.step1': 'Click “Start Installation” to download the ZIP.',
+                'download.recommended.step2': 'Extract the archive on your computer.',
+                'download.recommended.step3': 'Open chrome://extensions and enable Developer mode.',
+                'download.recommended.step4': 'Click “Load unpacked”.',
+                'download.recommended.step5': 'Select the extracted “chrome-extension” folder.',
+                'download.recommended.step6': 'In the popup, sign in and press ▶ to start.',
                 'tasks.title': 'Tasks',
                 'tasks.validate': 'Validate',
                 'tasks.validated': 'Validated',
@@ -687,6 +711,11 @@
                 'shop.activate_auto': 'Activar Auto‑minería',
                 'shop.buy_now': 'Comprar ahora',
                 'shop.quantity': 'Cantidad',
+                'shop.admin_only': 'Solo admin',
+                'shop.no_description': 'Sin descripción disponible.',
+                'shop.login_required': 'Por favor, inicia sesión',
+                'shop.payment.unavailable': 'Enlace de pago no disponible',
+                'shop.payment.unavailable_plan': 'Enlace de pago no disponible para este plan. Contacta soporte.',
                 'shop.payment.opened': 'Pago abierto en una nueva pestaña',
                 'shop.cost.image_compress': 'Compresión de imagen',
                 'shop.cost.http_get': 'HTTP GET (simple)',
@@ -743,6 +772,13 @@
                 'download.faq.q3': 'Airdrop',
                 'download.faq.a3': 'Instala, mantente activo y acumula puntos regularmente.',
                 'download.quickGuideMessage': 'Abre chrome://extensions/ → Modo desarrollador → Cargar descomprimida → carpeta chrome-extension',
+                'download.recommended.title': 'Procedimiento recomendado (ZIP)',
+                'download.recommended.step1': 'Haz clic en “Iniciar instalación” para descargar el ZIP.',
+                'download.recommended.step2': 'Descomprime el archivo en tu ordenador.',
+                'download.recommended.step3': 'Abre chrome://extensions y activa el modo Desarrollador.',
+                'download.recommended.step4': 'Haz clic en “Cargar descomprimida”.',
+                'download.recommended.step5': 'Selecciona la carpeta “chrome-extension” descomprimida.',
+                'download.recommended.step6': 'En el popup, inicia sesión y presiona ▶ para empezar.',
                 'tasks.title': 'Airdrop y Tareas',
                 'tasks.validate': 'Validar',
                 'tasks.validated': 'Validada',
@@ -3125,14 +3161,14 @@ print(r.json())</code></pre>
                                 <button id="btn-howto" class="profile-btn">${t('download.guide')}</button>
                             </div>
                             <div class="section-info-bubble" style="margin-top:10px;">
-                                <div style="font-weight:600;margin-bottom:6px;">Procédure recommandée (ZIP)</div>
+                                <div style="font-weight:600;margin-bottom:6px;">${t('download.recommended.title')}</div>
                                 <ol class="points-examples" style="margin:0;">
-                                    <li>Cliquez “Lancer l’installation” pour télécharger l’archive ZIP.</li>
-                                    <li>Décompressez l’archive sur votre ordinateur.</li>
-                                    <li>Ouvrez chrome://extensions et activez le Mode développeur.</li>
-                                    <li>Cliquez “Charger l’extension non empaquetée”.</li>
-                                    <li>Sélectionnez le dossier “chrome-extension” décompressé.</li>
-                                    <li>Dans le popup de l’extension, connectez‑vous puis appuyez sur ▶.</li>
+                                    <li>${t('download.recommended.step1')}</li>
+                                    <li>${t('download.recommended.step2')}</li>
+                                    <li>${t('download.recommended.step3')}</li>
+                                    <li>${t('download.recommended.step4')}</li>
+                                    <li>${t('download.recommended.step5')}</li>
+                                    <li>${t('download.recommended.step6')}</li>
                                 </ol>
                             </div>
                         </div>
@@ -3170,11 +3206,7 @@ print(r.json())</code></pre>
             const btnHow = document.getElementById('btn-howto');
             if (btnExt) btnExt.addEventListener('click', async () => {
                 const apiZip = `${API_BASE}/api/download/extension`;
-                const ghZip = 'https://github.com/Azurus333/Revolution-Network/archive/refs/heads/main.zip';
-                async function headOk(url) { try { const r = await fetch(url, { method: 'HEAD' }); return r.ok; } catch { return false; } }
-                let url = '';
-                if (await headOk(apiZip)) url = apiZip;
-                else url = ghZip;
+                const url = apiZip;
                 try {
                     const a = document.createElement('a');
                     a.href = url;
@@ -3184,7 +3216,7 @@ print(r.json())</code></pre>
                     a.click();
                     setTimeout(()=>{ try { document.body.removeChild(a); } catch {} }, 0);
                 } catch {
-                    try { window.open(url, '_blank'); } catch {}
+                    try { window.open(url, '_self'); } catch {}
                 }
                 setTimeout(()=>{ try { window.open('chrome://extensions/', '_blank'); } catch {} }, 500);
             });
@@ -3310,7 +3342,7 @@ function openShopItemModal(itemId) {
     details.innerHTML = `
         <div class="shop-detail-type" style="text-transform: uppercase; font-size: 0.8rem; color: var(--accent-color); margin-bottom: 0.5rem;">${item.type}</div>
         <div class="shop-detail-price" style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: (item.currency || 'EUR') }).format(parseFloat(item.price || 0)).replace(/\u00A0/g,' ')}</div>
-        <div class="shop-detail-desc" style="color: #9ca3af; margin-bottom: 2rem; line-height: 1.6;">${item.description || 'Aucune description disponible.'}</div>
+        <div class="shop-detail-desc" style="color: #9ca3af; margin-bottom: 2rem; line-height: 1.6;">${item.description || t('shop.no_description')}</div>
         ${extraControls}
         <div class="shop-detail-actions">
             ${actionButton}
@@ -3392,7 +3424,7 @@ function handlePresaleBuy(itemId) {
     const item = currentShopItems.find(i => i.id === itemId);
     if (!item) return;
     const token = localStorage.getItem('token');
-    if (!token) { alert('Veuillez vous connecter'); return; }
+    if (!token) { alert(t('shop.login_required')); return; }
     let meta = {};
     try { meta = JSON.parse(item.metadata || '{}'); } catch { if (typeof item.metadata === 'object' && item.metadata) meta = item.metadata; }
     let link = meta.paymentLink || meta.stripeLink || meta.link || meta.payment || meta.url || '';
@@ -3404,7 +3436,7 @@ function handlePresaleBuy(itemId) {
             if (m2) link = m2[1];
         } catch {}
     }
-    if (!link) { alert('Lien de paiement indisponible'); return; }
+    if (!link) { alert(t('shop.payment.unavailable')); return; }
     try {
         const a = document.createElement('a');
         a.href = link;
@@ -3455,7 +3487,7 @@ function initializeShopPage() {
             const itemsHtml = arr.map(i => {
                 let meta = {};
                 try { meta = JSON.parse(i.metadata || '{}'); } catch {}
-                const adminTag = meta.adminOnly ? '<div class="plan-tag special">Admin only</div>' : '';
+                const adminTag = meta.adminOnly ? `<div class="plan-tag special">${t('shop.admin_only')}</div>` : '';
                 return `
                 <div class="shop-card" onclick="openShopItemModal(${i.id})">
                     <div class="shop-info">
@@ -3559,7 +3591,7 @@ function initializeShopPage() {
                     btn.addEventListener('click', () => {
                         const link = btn.getAttribute('data-link');
                         if (!link) {
-                            alert('Lien de paiement indisponible pour ce plan. Contactez le support.');
+                            alert(t('shop.payment.unavailable_plan'));
                             return;
                         }
                         if (link.startsWith('mailto:')) {
