@@ -2936,12 +2936,19 @@ print(r.json())</code></pre>
                 }
                 alert('Bonus appliqué avec succès');
                 closeBonusModal();
-                const ac = document.getElementById('header-api-credits');
-                if (ac) {
-                    fetch(`${API_BASE}/api/enterprise/me`, { headers: { 'Authorization': `Bearer ${token}` }})
-                        .then(r => r.json())
-                        .then(j => { if (j && j.credits) ac.textContent = `API: ${(j.credits.remaining||0).toLocaleString()}`; })
-                        .catch(()=>{});
+                if (type === 'points_api') {
+                    const ac = document.getElementById('header-api-credits');
+                    if (ac) {
+                        fetch(`${API_BASE}/api/enterprise/me`, { headers: { 'Authorization': `Bearer ${token}` }})
+                            .then(r => r.json())
+                            .then(j => { if (j && j.credits) ac.textContent = `API: ${(j.credits.remaining||0).toLocaleString()}`; })
+                            .catch(()=>{});
+                    }
+                    try { if (typeof refreshHeader === 'function') refreshHeader(); } catch {}
+                    const body = document.getElementById('user-detail-body');
+                    if (body && body.closest('#user-detail-modal')?.classList.contains('open')) {
+                        showUserDetail(userId);
+                    }
                 }
             })
             .catch(e => alert('Erreur: ' + e.message));
@@ -4801,6 +4808,7 @@ function initializeShopPage() {
             .then(r => r.json())
             .then(data => {
                 const t = data.ticket;
+                const isClosed = !!(t.closed || (t.status && String(t.status).toLowerCase() === 'closed') || t.closed_at);
                 
                 // Highlight active item
                 document.querySelectorAll('.ticket-item').forEach(el => {
@@ -4835,7 +4843,7 @@ function initializeShopPage() {
                         <div class="chat-messages" id="chat-messages-area"></div>
                         <div class="chat-input-area">
                              ${
-                               t.status !== 'closed' ? `
+                               !isClosed ? `
                                  <div style="display:flex;gap:8px;">
                                      <textarea class="chat-input" id="chat-input-text" placeholder="Répondre..." style="flex:1;padding:8px;border-radius:4px;border:1px solid #374151;background:#1f2937;color:white;resize:none;height:40px;"></textarea>
                                      <label for="chat-file-input" class="profile-btn" style="padding:8px;cursor:pointer;">📷</label>
@@ -4919,8 +4927,9 @@ function initializeShopPage() {
 
                     let content = `<div style="white-space:pre-wrap;">${m.message || ''}</div>`;
                     if (m.attachment_url || m.image_url) {
-                        const url = m.attachment_url || m.image_url;
-                        content += `<img src="${API_BASE}${url}" class="message-image" onclick="window.open(this.src, '_blank')">`;
+                        const rawUrl = m.attachment_url || m.image_url;
+                        const fullUrl = rawUrl.startsWith('http') ? rawUrl : `${API_BASE}${rawUrl}`;
+                        content += `<img data-src="${fullUrl}" class="message-image" style="max-width:320px;border-radius:6px;cursor:pointer;display:block;margin-top:6px;" />`;
                     }
                     
                     return `<div class="message ${isMe ? 'message-user' : 'message-admin'}">
@@ -4928,6 +4937,27 @@ function initializeShopPage() {
                         ${content}
                     </div>`;
                 }).join('');
+
+                // Post-process images to support auth-protected URLs
+                const imgs = area.querySelectorAll('img.message-image[data-src]');
+                imgs.forEach(async (img) => {
+                    const url = img.getAttribute('data-src');
+                    try {
+                        const r = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }});
+                        if (r.ok && r.headers.get('content-type') && r.headers.get('content-type').startsWith('image/')) {
+                            const blob = await r.blob();
+                            const blobUrl = URL.createObjectURL(blob);
+                            img.src = blobUrl;
+                            img.onclick = () => window.open(url, '_blank');
+                        } else {
+                            img.src = url;
+                            img.onclick = () => window.open(url, '_blank');
+                        }
+                    } catch {
+                        img.src = url;
+                        img.onclick = () => window.open(url, '_blank');
+                    }
+                });
 
                 if (isAtBottom) area.scrollTop = area.scrollHeight;
             })
