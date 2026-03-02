@@ -1253,7 +1253,31 @@
                     }
                 })
                 .then(({ ok, data }) => {
-                    if (ok && data.token) {
+                    if (ok && data.needs2fa && data.twofaToken) {
+                        const code = prompt('Entrez le code Google Authenticator (6 chiffres)');
+                        if (!code) return;
+                        fetch(`${API_BASE}/api/auth/2fa/verify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ twofaToken: data.twofaToken, code })
+                        })
+                        .then(async r => {
+                            let j = {};
+                            try { j = await r.json(); } catch {}
+                            if (r.ok && j.token) {
+                                localStorage.setItem('token', j.token);
+                                if (j.refreshToken) localStorage.setItem('refreshToken', j.refreshToken);
+                                currentPage = 'overview';
+                                renderPage();
+                                refreshHeader();
+                                const lm = document.getElementById('login-modal');
+                                if (lm) lm.classList.remove('open');
+                            } else {
+                                alert(j.error || 'Code 2FA invalide');
+                            }
+                        })
+                        .catch(() => alert('Erreur de vérification 2FA'));
+                    } else if (ok && data.token) {
                         localStorage.setItem('token', data.token);
                         if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
                         currentPage = 'overview';
@@ -2163,6 +2187,23 @@
                                         </div>
                                         <button type="button" id="set-password-btn" class="profile-btn">${t('profile.password.save')}</button>
                                     </div>
+                                    <div style="margin-top:16px; width:100%; border-top:1px solid #1f2937; padding-top:16px;">
+                                        <h3 style="margin-bottom:8px;">Double sécurité (Google Authenticator)</h3>
+                                        <div id="twofa-info" class="section-info-bubble">Activez Google Authenticator pour sécuriser votre compte. Scannez le QR puis entrez le code.</div>
+                                        <div id="twofa-status" style="margin:8px 0;color:#94a3b8;">Statut: chargement...</div>
+                                        <div id="twofa-setup" style="display:none;margin:8px 0;">
+                                            <img id="twofa-qr" alt="QR 2FA" style="width:180px;height:180px;image-rendering:pixelated;border:1px solid #334155;border-radius:6px;">
+                                            <div class="profile-field" style="margin-top:8px;">
+                                                <label>Code (6 chiffres)</label>
+                                                <input type="text" id="twofa-code" placeholder="123456" inputmode="numeric" pattern="\\d{6}">
+                                            </div>
+                                            <button type="button" id="twofa-enable-btn" class="profile-btn primary">Activer 2FA</button>
+                                        </div>
+                                        <div id="twofa-actions" style="display:flex;gap:8px;margin-top:8px;">
+                                            <button type="button" id="twofa-start-btn" class="profile-btn">Activer Google Authenticator</button>
+                                            <button type="button" id="twofa-disable-btn" class="profile-btn danger" style="display:none;">Désactiver 2FA</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -2191,6 +2232,12 @@
             const profileRankBadge = document.getElementById('profile-rank-badge');
             const newPasswordInput = document.getElementById('new-password');
             const confirmPasswordInput = document.getElementById('confirm-password');
+            const twofaStatus = document.getElementById('twofa-status');
+            const twofaStart = document.getElementById('twofa-start-btn');
+            const twofaSetup = document.getElementById('twofa-setup');
+            const twofaQr = document.getElementById('twofa-qr');
+            const twofaEnable = document.getElementById('twofa-enable-btn');
+            const twofaDisable = document.getElementById('twofa-disable-btn');
 
             // Charger les données du profil
             fetch(`${API_BASE}/api/user/profile`, {
@@ -2214,6 +2261,71 @@
                         profileRankBadge.style.display = 'inline-flex';
                     }
                 }
+            });
+
+            function load2faStatus() {
+                fetch(`${API_BASE}/api/auth/2fa/status`, { headers: { 'Authorization': `Bearer ${token}` }})
+                  .then(r => r.json())
+                  .then(j => {
+                    const enabled = !!j.enabled;
+                    if (twofaStatus) twofaStatus.textContent = `Statut: ${enabled ? 'activé' : 'désactivé'}`;
+                    if (twofaDisable) twofaDisable.style.display = enabled ? '' : 'none';
+                    if (twofaStart) twofaStart.style.display = enabled ? 'none' : '';
+                    if (enabled && twofaSetup) twofaSetup.style.display = 'none';
+                  })
+                  .catch(()=>{ if (twofaStatus) twofaStatus.textContent = 'Statut: inconnu'; });
+            }
+            load2faStatus();
+            let currentSecret = null;
+            if (twofaStart) twofaStart.addEventListener('click', () => {
+                fetch(`${API_BASE}/api/auth/2fa/setup`, { headers: { 'Authorization': `Bearer ${token}` }})
+                 .then(r => r.json())
+                 .then(j => {
+                    currentSecret = j.secret;
+                    const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(j.otpauth)}`;
+                    if (twofaQr) twofaQr.src = qrUrl;
+                    if (twofaSetup) twofaSetup.style.display = '';
+                 })
+                 .catch(()=> alert('Erreur 2FA'));
+            });
+            if (twofaEnable) twofaEnable.addEventListener('click', () => {
+                const codeEl = document.getElementById('twofa-code');
+                const code = codeEl ? codeEl.value.trim() : '';
+                fetch(`${API_BASE}/api/auth/2fa/enable`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ secret: currentSecret, code })
+                })
+                .then(r => r.json().then(j => ({ ok: r.ok, j })))
+                .then(({ ok, j }) => {
+                    if (ok) {
+                        alert('2FA activé');
+                        load2faStatus();
+                        if (twofaSetup) twofaSetup.style.display = 'none';
+                    } else {
+                        alert(j.error || 'Code invalide');
+                    }
+                })
+                .catch(()=> alert('Erreur serveur'));
+            });
+            if (twofaDisable) twofaDisable.addEventListener('click', () => {
+                const code = prompt('Entrez votre code 2FA pour désactiver');
+                if (!code) return;
+                fetch(`${API_BASE}/api/auth/2fa/disable`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ code })
+                })
+                .then(r => r.json().then(j => ({ ok: r.ok, j })))
+                .then(({ ok, j }) => {
+                    if (ok) {
+                        alert('2FA désactivé');
+                        load2faStatus();
+                    } else {
+                        alert(j.error || 'Erreur');
+                    }
+                })
+                .catch(()=> alert('Erreur serveur'));
             });
 
             // Gérer la soumission du formulaire
@@ -2863,6 +2975,7 @@ print(r.json())</code></pre>
                             <div class="admin-actions">
                                 <button class="chip-btn" data-action="override" data-id="${u.id}">Rang</button>
                                 <button class="chip-btn warning" data-action="cancel-sub" data-id="${u.id}">Suppr. abo</button>
+                                <button class="chip-btn" data-action="validate-2fa" data-id="${u.id}">Validé 2FA</button>
                                 <button class="chip-btn primary" data-action="bonus" data-id="${u.id}">Bonus</button>
                                 <button class="chip-btn" data-action="edit-points" data-id="${u.id}">Modif points</button>
                                 <button class="chip-btn danger" data-action="delete" data-id="${u.id}">Supprimer</button>
@@ -2927,6 +3040,22 @@ print(r.json())</code></pre>
                              }
                         } else if (action === 'bonus') {
                             openBonusModal(id);
+                        } else if (action === 'validate-2fa') {
+                            if (confirm("Valider la double sécurité pour cet utilisateur ?")) {
+                                fetch(`${API_BASE}/api/admin/users/${id}/2fa-validate`, {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                })
+                                .then(async r => {
+                                    const j = await r.json().catch(()=>({}));
+                                    if (!r.ok) throw new Error(j.error || 'Erreur');
+                                    return j;
+                                })
+                                .then(() => {
+                                    alert('2FA validé pour cet utilisateur');
+                                })
+                                .catch(e => alert('Erreur: ' + (e.message || 'inconnue')));
+                            }
                         } else if (action === 'edit-points') {
                             const curCell = b.closest('tr')?.querySelector('td:nth-child(6)');
                             const current = curCell ? parseFloat(curCell.textContent.replace(/[^0-9.-]/g,'')) : null;
@@ -4435,6 +4564,8 @@ function initializeShopPage() {
                         <h1 class="page-title">Airdrop Allocation</h1>
                         <div style="display:flex;gap:8px;">
                             <button class="profile-btn" id="btn-calc-airdrop" title="Score = 0.5*sqrt(spent) + 0.25*pow(pts,0.7) + 0.15*days + 0.1*buys">Calculer Allocation Airdrop</button>
+                            <input id="airdrop-campaign-id" type="text" placeholder="ID campagne (ex: v1)" style="padding:8px;border:1px solid #334155;border-radius:6px;background:#1e293b;color:#fff;min-width:160px">
+                            <button class="profile-btn" id="btn-award-airdrop">Attribuer Airdrop</button>
                             <button class="profile-btn secondary" id="btn-toggle-withdraw" disabled>Chargement...</button>
                         </div>
                     </div>
@@ -4474,6 +4605,8 @@ function initializeShopPage() {
             const searchInput = document.getElementById('airdrop-search');
             const statsDiv = document.getElementById('airdrop-stats');
             const btnCalc = document.getElementById('btn-calc-airdrop');
+            const inputCampaign = document.getElementById('airdrop-campaign-id');
+            const btnAward = document.getElementById('btn-award-airdrop');
             const btnWithdraw = document.getElementById('btn-toggle-withdraw');
             
             let currentSort = 'score';
@@ -4582,6 +4715,14 @@ function initializeShopPage() {
                 });
             });
 
+            (function presetCampaignId(){
+                try {
+                    const d = new Date();
+                    const id = `v${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+                    if (inputCampaign && !inputCampaign.value) inputCampaign.value = id;
+                } catch {}
+            })();
+
             btnCalc.addEventListener('click', async () => {
                 if (!confirm("Êtes-vous sûr de vouloir recalculer l'allocation airdrop pour TOUS les utilisateurs ? Cette opération peut prendre du temps.")) return;
                 
@@ -4621,6 +4762,38 @@ function initializeShopPage() {
                 } finally {
                     btnCalc.disabled = false;
                     btnCalc.textContent = 'Calculer Allocation Airdrop';
+                }
+            });
+
+            btnAward.addEventListener('click', async () => {
+                const campaignId = inputCampaign ? inputCampaign.value.trim() : '';
+                if (!confirm(`Attribuer l'airdrop${campaignId?` (campagne: ${campaignId})`:''} ? Les allocations seront créditées en ZETA et remises à zéro.`)) return;
+                btnAward.disabled = true;
+                btnAward.textContent = 'Attribution...';
+                try {
+                    const res = await fetch(`${API_BASE}/api/admin/airdrop/award`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ campaign_id: campaignId })
+                    });
+                    const j = await res.json().catch(()=>({}));
+                    if (!res.ok) {
+                        throw new Error(j.error || `Erreur ${res.status}`);
+                    }
+                    const users = j.users_awarded || 0;
+                    const skipped = j.users_skipped || 0;
+                    const total = j.total_distributed || 0;
+                    alert(`Airdrop attribué à ${users} utilisateur(s)\nIgnorés (déjà crédités): ${skipped}\nTotal crédité: ${total.toLocaleString()} ZETA\nCampagne: ${j.campaign_id || campaignId || '-'}`);
+                    loadParticipants();
+                    try { refreshHeader(); } catch {}
+                } catch (e) {
+                    alert('Erreur: ' + (e.message || 'Inconnue'));
+                } finally {
+                    btnAward.disabled = false;
+                    btnAward.textContent = 'Attribuer Airdrop';
                 }
             });
 
