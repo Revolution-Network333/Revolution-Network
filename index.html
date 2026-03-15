@@ -3633,6 +3633,13 @@ function openShopItemModal(itemId) {
             }).then(async (r) => {
                 const j = await r.json().catch(()=>({}));
                 if (!r.ok || j.error) { console.warn('Order creation failed:', j.error || r.status); return; }
+                try {
+                    const banner = document.createElement('div');
+                    banner.textContent = (j.requiresPayment && j.order) ? 'Commande créée — paiement en attente de confirmation.' : 'Demande enregistrée.';
+                    banner.style = 'position:fixed;top:12px;right:12px;background:#111827;color:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:9999;font-size:.9rem;';
+                    document.body.appendChild(banner);
+                    setTimeout(()=>{ try { document.body.removeChild(banner); } catch {} }, 3500);
+                } catch {}
                 try { refreshHeader(); } catch {}
                 closeShopItemModal();
             }).catch((e) => console.warn('Erreur réseau', e));
@@ -3688,7 +3695,7 @@ function handlePresaleBuy(itemId) {
         if (!r.ok || j.error) { alert(j.error || 'Achat impossible'); return; }
         try {
             const banner = document.createElement('div');
-            banner.textContent = t('shop.payment.opened');
+            banner.textContent = (j.requiresPayment && j.order) ? 'Paiement ouvert — commande créée (en attente de confirmation).' : t('shop.payment.opened');
             banner.style = 'position:fixed;top:12px;right:12px;background:#111827;color:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:9999;font-size:.9rem;';
             document.body.appendChild(banner);
             setTimeout(()=>{ try { document.body.removeChild(banner); } catch {} }, 3500);
