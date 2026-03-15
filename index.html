@@ -3603,6 +3603,17 @@ function openShopItemModal(itemId) {
                 const rounded = Math.round(q / 50) * 50;
                 payload.qty = Math.max(minQty, rounded);
             }
+
+            let fallbackLink = '';
+            try { fallbackLink = (m && (m.paymentLink || m.stripeLink || m.link || m.payment || m.url)) ? String(m.paymentLink || m.stripeLink || m.link || m.payment || m.url) : ''; } catch {}
+            if (!fallbackLink) {
+                try {
+                    const rx = /(https?:\/\/[^\s)"]+)/i;
+                    const d = String(item.description || '');
+                    const m2 = d.match(rx);
+                    if (m2) fallbackLink = m2[1];
+                } catch {}
+            }
             fetch(`${API_BASE}/api/shop/buy/${item.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -3612,9 +3623,9 @@ function openShopItemModal(itemId) {
                 if (!r.ok || j.error) { console.warn('Order creation failed:', j.error || r.status); return; }
                 if (j.checkoutUrl) {
                     try { window.open(j.checkoutUrl, '_blank', 'noopener,noreferrer'); } catch {}
-                } else if (link && item.type === 'presale') {
+                } else if (fallbackLink && j.requiresPayment) {
                     const uid = window.currentUserId || (token ? JSON.parse(atob(token.split('.')[1])).userId : null);
-                    let url = String(link);
+                    let url = String(fallbackLink);
                     if (uid) {
                         const separator = url.includes('?') ? '&' : '?';
                         url += `${separator}client_reference_id=${uid}`;
@@ -3630,8 +3641,10 @@ function openShopItemModal(itemId) {
                     document.body.appendChild(banner);
                     setTimeout(()=>{ try { document.body.removeChild(banner); } catch {} }, 3500);
                 } catch {}
-                try { refreshHeader(); } catch {}
-                closeShopItemModal();
+                if (!j.requiresPayment) {
+                    try { refreshHeader(); } catch {}
+                    closeShopItemModal();
+                }
             }).catch((e) => console.warn('Erreur réseau', e));
         });
     }
@@ -3652,6 +3665,15 @@ function handlePresaleBuy(itemId) {
     if (!token) { alert(t('shop.login_required')); return; }
     let meta = {};
     try { meta = JSON.parse(item.metadata || '{}'); } catch { if (typeof item.metadata === 'object' && item.metadata) meta = item.metadata; }
+    let fallbackLink = meta.paymentLink || meta.stripeLink || meta.link || meta.payment || meta.url || '';
+    if (!fallbackLink) {
+        try {
+            const rx = /(https?:\/\/[^\s)"]+)/i;
+            const d = String(item.description || '');
+            const m2 = d.match(rx);
+            if (m2) fallbackLink = m2[1];
+        } catch {}
+    }
     const minQty = Number.isFinite(parseFloat(meta.minQty)) ? parseFloat(meta.minQty) : 50;
     const qty = minQty;
     fetch(`${API_BASE}/api/shop/buy/${item.id}`, {
@@ -3663,6 +3685,14 @@ function handlePresaleBuy(itemId) {
         if (!r.ok || j.error) { alert(j.error || 'Achat impossible'); return; }
         if (j.checkoutUrl) {
             try { window.open(j.checkoutUrl, '_blank', 'noopener,noreferrer'); } catch {}
+        } else if (fallbackLink && j.requiresPayment) {
+            const uid = window.currentUserId || (token ? JSON.parse(atob(token.split('.')[1])).userId : null);
+            let url = String(fallbackLink);
+            if (uid) {
+                const separator = url.includes('?') ? '&' : '?';
+                url += `${separator}client_reference_id=${uid}`;
+            }
+            try { window.open(url, '_blank', 'noopener,noreferrer'); } catch {}
         } else if (j.requiresPayment) {
             alert('Paiement Stripe non configuré côté serveur (checkoutUrl manquant).');
         }
@@ -3673,7 +3703,9 @@ function handlePresaleBuy(itemId) {
             document.body.appendChild(banner);
             setTimeout(()=>{ try { document.body.removeChild(banner); } catch {} }, 3500);
         } catch {}
-        try { refreshHeader(); } catch {}
+        if (!j.requiresPayment) {
+            try { refreshHeader(); } catch {}
+        }
     }).catch(() => console.warn('Erreur réseau'));
 }
 
