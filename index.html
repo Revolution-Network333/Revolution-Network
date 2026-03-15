@@ -3595,29 +3595,6 @@ function openShopItemModal(itemId) {
             if (item.type === 'node_nft' && !link) {
                 link = 'https://buy.stripe.com/6oU8wO4Qxcrjfy7aun6oo05';
             }
-            if (item.type === 'presale' || item.type === 'node_nft') {
-                if (!link) { alert('Lien de paiement indisponible'); return; }
-                
-                // Append client_reference_id if user is logged in
-                const uid = window.currentUserId || (token ? JSON.parse(atob(token.split('.')[1])).userId : null);
-                if (uid) {
-                    const separator = link.includes('?') ? '&' : '?';
-                    link += `${separator}client_reference_id=${uid}`;
-                }
-
-                try {
-                    const a = document.createElement('a');
-                    a.href = link;
-                    a.target = '_blank';
-                    a.rel = 'noopener noreferrer';
-                    a.style.display = 'none';
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(()=>{ try { document.body.removeChild(a); } catch {} }, 0);
-                } catch {
-                    try { window.open(link, '_blank', 'noopener,noreferrer'); } catch {}
-                }
-            }
             let payload = {};
             const qtyEl = document.getElementById('buy-qty');
             if (qtyEl) {
@@ -3633,6 +3610,19 @@ function openShopItemModal(itemId) {
             }).then(async (r) => {
                 const j = await r.json().catch(()=>({}));
                 if (!r.ok || j.error) { console.warn('Order creation failed:', j.error || r.status); return; }
+                if (j.checkoutUrl) {
+                    try { window.open(j.checkoutUrl, '_blank', 'noopener,noreferrer'); } catch {}
+                } else if (link && item.type === 'presale') {
+                    const uid = window.currentUserId || (token ? JSON.parse(atob(token.split('.')[1])).userId : null);
+                    let url = String(link);
+                    if (uid) {
+                        const separator = url.includes('?') ? '&' : '?';
+                        url += `${separator}client_reference_id=${uid}`;
+                    }
+                    try { window.open(url, '_blank', 'noopener,noreferrer'); } catch {}
+                } else if (j.requiresPayment) {
+                    alert('Paiement Stripe non configuré côté serveur (checkoutUrl manquant).');
+                }
                 try {
                     const banner = document.createElement('div');
                     banner.textContent = (j.requiresPayment && j.order) ? 'Commande créée — paiement en attente de confirmation.' : 'Demande enregistrée.';
@@ -3662,28 +3652,6 @@ function handlePresaleBuy(itemId) {
     if (!token) { alert(t('shop.login_required')); return; }
     let meta = {};
     try { meta = JSON.parse(item.metadata || '{}'); } catch { if (typeof item.metadata === 'object' && item.metadata) meta = item.metadata; }
-    let link = meta.paymentLink || meta.stripeLink || meta.link || meta.payment || meta.url || '';
-    if (!link) {
-        try {
-            const rx = /(https?:\/\/[^\s)"]+)/i;
-            const d = String(item.description || '');
-            const m2 = d.match(rx);
-            if (m2) link = m2[1];
-        } catch {}
-    }
-    if (!link) { alert(t('shop.payment.unavailable')); return; }
-    try {
-        const a = document.createElement('a');
-        a.href = link;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(()=>{ try { document.body.removeChild(a); } catch {} }, 0);
-    } catch {
-        try { window.open(link, '_blank', 'noopener,noreferrer'); } catch {}
-    }
     const minQty = Number.isFinite(parseFloat(meta.minQty)) ? parseFloat(meta.minQty) : 50;
     const qty = minQty;
     fetch(`${API_BASE}/api/shop/buy/${item.id}`, {
@@ -3693,6 +3661,11 @@ function handlePresaleBuy(itemId) {
     }).then(async (r) => {
         const j = await r.json().catch(()=>({}));
         if (!r.ok || j.error) { alert(j.error || 'Achat impossible'); return; }
+        if (j.checkoutUrl) {
+            try { window.open(j.checkoutUrl, '_blank', 'noopener,noreferrer'); } catch {}
+        } else if (j.requiresPayment) {
+            alert('Paiement Stripe non configuré côté serveur (checkoutUrl manquant).');
+        }
         try {
             const banner = document.createElement('div');
             banner.textContent = (j.requiresPayment && j.order) ? 'Paiement ouvert — commande créée (en attente de confirmation).' : t('shop.payment.opened');
