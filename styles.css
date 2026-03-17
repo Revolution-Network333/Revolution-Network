@@ -2046,27 +2046,29 @@ input:checked + .slider:before {
 .profile-container {
   display: grid;
   gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
 .profile-card {
   background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
   border: 1px solid #374151;
   border-radius: 16px;
-  padding: 24px;
+  padding: 18px;
 }
 
 .profile-highlights {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
+  grid-template-columns: 240px 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .profile-highlight {
   background: rgba(15, 23, 42, 0.45);
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 12px 14px;
 }
 
 .profile-highlight-label {
@@ -2079,7 +2081,7 @@ input:checked + .slider:before {
 
 .profile-highlight-value {
   margin-top: 6px;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: #f8fafc;
 }
@@ -2112,7 +2114,7 @@ input:checked + .slider:before {
 
 .rank-progress-bar {
   margin-top: 10px;
-  height: 10px;
+  height: 9px;
   border-radius: 999px;
   background: rgba(148, 163, 184, 0.12);
   border: 1px solid rgba(148, 163, 184, 0.14);
@@ -2129,7 +2131,7 @@ input:checked + .slider:before {
 
 .rank-progress-markers {
   position: relative;
-  height: 30px;
+  height: 26px;
   margin-top: 10px;
 }
 
@@ -2144,18 +2146,22 @@ input:checked + .slider:before {
 .rank-marker::before {
   content: "";
   display: block;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
-  margin: 0 auto 6px;
+  margin: 0 auto 5px;
   background: rgba(148, 163, 184, 0.35);
   border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
 .rank-marker span {
-  font-size: 11px;
+  font-size: 10px;
   color: #94a3b8;
   white-space: nowrap;
+}
+
+.rank-marker.is-shifted {
+  top: 12px;
 }
 
 .profile-top-actions {
@@ -2163,12 +2169,12 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 6px;
   flex-wrap: wrap;
 }
 
 .profile-top-actions .profile-btn {
-  padding: 10px 14px;
+  padding: 9px 12px;
   border-radius: 10px;
   font-size: 13px;
 }
@@ -2176,20 +2182,20 @@ input:checked + .slider:before {
 .profile-subsections {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .profile-section-card {
   background: rgba(2, 6, 23, 0.25);
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 14px;
-  padding: 16px;
+  padding: 14px;
 }
 
 .profile-section-title {
   margin: 0 0 10px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   color: #e5e7eb;
 }
@@ -2241,7 +2247,7 @@ input:checked + .slider:before {
 }
 
 .profile-field {
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .profile-field label {
@@ -2249,7 +2255,7 @@ input:checked + .slider:before {
   font-size: 13px;
   font-weight: 600;
   color: #9ca3af;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .profile-field input {
@@ -2257,9 +2263,9 @@ input:checked + .slider:before {
   background: rgba(31, 41, 55, 0.8);
   border: 1px solid #374151;
   color: #f9fafb;
-  padding: 12px 16px;
+  padding: 10px 12px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .profile-field input:focus {
@@ -2327,7 +2333,7 @@ input:checked + .slider:before {
   background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
   border: 1px solid #374151;
   border-radius: 16px;
-  padding: 24px;
+  padding: 18px;
 }
 
 .achievements-header {

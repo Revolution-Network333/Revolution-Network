@@ -2265,13 +2265,6 @@
                                     </div>
                             </form>
                         </div>
-
-                        <div class="achievements-card">
-                            <h3>${t('profile.achievements')}</h3>
-                            <div class="achievements-grid">
-                                <!-- Les accomplissements seront chargés dynamiquement -->
-                            </div>
-                        </div>
                     </div>
                 </div>
             `;
@@ -2326,16 +2319,33 @@
                 ];
 
                 if (rankProgressMarkers) {
+                    const order = thresholds.map(x => x.name);
                     rankProgressMarkers.querySelectorAll('.rank-marker').forEach(el => {
                         const r = el.getAttribute('data-rank') || '';
-                        const th = thresholds.find(x => x.name === r);
-                        if (!th) return;
-                        const left = Math.max(0, Math.min(100, (th.points / maxPoints) * 100));
+                        const idx = order.indexOf(r);
+                        if (idx === -1) return;
+                        const left = Math.max(0, Math.min(100, (idx / Math.max(1, (order.length - 1))) * 100));
                         el.style.left = `${left}%`;
                         if (left <= 1) el.style.transform = 'translateX(0%)';
                         else if (left >= 99) el.style.transform = 'translateX(-100%)';
                         else el.style.transform = 'translateX(-50%)';
                     });
+
+                    const markers = Array.from(rankProgressMarkers.querySelectorAll('.rank-marker'))
+                      .map(el => ({ el, left: Number.parseFloat(el.style.left || '0') }))
+                      .sort((a, b) => a.left - b.left);
+                    let prevLeft = null;
+                    let overlapIndex = 0;
+                    for (const m of markers) {
+                        m.el.classList.remove('is-shifted');
+                        if (prevLeft !== null && (m.left - prevLeft) < 16) {
+                            overlapIndex += 1;
+                        } else {
+                            overlapIndex = 0;
+                        }
+                        if (overlapIndex % 2 === 1) m.el.classList.add('is-shifted');
+                        prevLeft = m.left;
+                    }
                 }
 
                 const next = thresholds.find(x => x.points > points) || null;
