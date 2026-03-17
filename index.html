@@ -3937,21 +3937,9 @@ function openShopItemModal(itemId) {
             if (buyBtn) {
         buyBtn.addEventListener('click', () => {
             const token = localStorage.getItem('token');
-            if (!token) { alert('Veuillez vous connecter'); return; }
+            if (!token) { alert(t('shop.login_required')); return; }
             let m = {};
             try { m = JSON.parse(item.metadata || '{}'); } catch { if (typeof item.metadata === 'object' && item.metadata) m = item.metadata; }
-            let link = m.paymentLink || m.stripeLink || m.link || m.payment || m.url || '';
-            if (!link) {
-                try {
-                    const rx = /(https?:\/\/[^\s)"]+)/i;
-                    const d = String(item.description || '');
-                    const m2 = d.match(rx);
-                    if (m2) link = m2[1];
-                } catch {}
-            }
-            if (item.type === 'node_nft' && !link) {
-                link = 'https://buy.stripe.com/6oU8wO4Qxcrjfy7aun6oo05';
-            }
             let payload = {};
             const qtyEl = document.getElementById('buy-qty');
             if (qtyEl) {
@@ -3971,13 +3959,23 @@ function openShopItemModal(itemId) {
                     if (m2) fallbackLink = m2[1];
                 } catch {}
             }
+            if (item.type === 'node_nft' && !fallbackLink) {
+                fallbackLink = 'https://buy.stripe.com/dRm6oJcbg53X0Uef0A4gg00';
+            }
             fetch(`${API_BASE}/api/shop/buy/${item.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(payload)
             }).then(async (r) => {
                 const j = await r.json().catch(()=>({}));
-                if (!r.ok || j.error) { console.warn('Order creation failed:', j.error || r.status); return; }
+                if (!r.ok || j.error) {
+                    if (fallbackLink) {
+                        try { window.open(fallbackLink, '_blank', 'noopener,noreferrer'); } catch {}
+                    } else {
+                        console.warn('Order creation failed:', j.error || r.status);
+                    }
+                    return;
+                }
                 if (j.checkoutUrl) {
                     try { window.open(j.checkoutUrl, '_blank', 'noopener,noreferrer'); } catch {}
                 } else if (fallbackLink && j.requiresPayment) {
