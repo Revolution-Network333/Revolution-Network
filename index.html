@@ -2587,11 +2587,6 @@
             }
 
             function updateRankProgress(totalPoints) {
-                const maxPoints = 10000000;
-                const points = Math.max(0, Number(totalPoints || 0));
-                const pct = Math.max(0, Math.min(100, (points / maxPoints) * 100));
-                if (rankProgressFill) rankProgressFill.style.width = `${pct}%`;
-
                 const thresholds = [
                     { name: 'Bronze', points: 0 },
                     { name: 'Silver', points: 5000 },
@@ -2600,13 +2595,17 @@
                     { name: 'Diamond', points: 10000000 }
                 ];
 
+                const maxPoints = Math.max(1, Number(thresholds[thresholds.length - 1]?.points || 1));
+                const points = Math.max(0, Number(totalPoints || 0));
+                const pct = Math.max(0, Math.min(100, (points / maxPoints) * 100));
+                if (rankProgressFill) rankProgressFill.style.width = `${pct}%`;
+
                 if (rankProgressMarkers) {
-                    const order = thresholds.map(x => x.name);
                     rankProgressMarkers.querySelectorAll('.rank-marker').forEach(el => {
                         const r = el.getAttribute('data-rank') || '';
-                        const idx = order.indexOf(r);
-                        if (idx === -1) return;
-                        const left = Math.max(0, Math.min(100, (idx / Math.max(1, (order.length - 1))) * 100));
+                        const def = thresholds.find(x => x.name === r) || null;
+                        if (!def) return;
+                        const left = Math.max(0, Math.min(100, (Number(def.points || 0) / maxPoints) * 100));
                         el.style.left = `${left}%`;
                         if (left <= 1) el.style.transform = 'translateX(0%)';
                         else if (left >= 99) el.style.transform = 'translateX(-100%)';
