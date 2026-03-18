@@ -2595,17 +2595,40 @@
                     { name: 'Diamond', points: 10000000 }
                 ];
 
-                const maxPoints = Math.max(1, Number(thresholds[thresholds.length - 1]?.points || 1));
                 const points = Math.max(0, Number(totalPoints || 0));
-                const pct = Math.max(0, Math.min(100, (points / maxPoints) * 100));
+                const maxPoints = Math.max(1, Number(thresholds[thresholds.length - 1]?.points || 1));
+                const segments = Math.max(1, thresholds.length - 1);
+                let pct = 0;
+                if (points >= maxPoints) {
+                    pct = 100;
+                } else {
+                    let segIdx = 0;
+                    for (let i = 0; i < thresholds.length - 1; i++) {
+                        if (points >= Number(thresholds[i].points || 0) && points < Number(thresholds[i + 1].points || 0)) {
+                            segIdx = i;
+                            break;
+                        }
+                        if (points >= Number(thresholds[i + 1].points || 0)) segIdx = i + 1;
+                    }
+                    if (segIdx >= thresholds.length - 1) segIdx = thresholds.length - 2;
+                    const cur = thresholds[segIdx];
+                    const nxt = thresholds[segIdx + 1];
+                    const curPts = Number(cur?.points || 0);
+                    const nxtPts = Math.max(curPts + 1, Number(nxt?.points || 0));
+                    const within = Math.max(0, Math.min(1, (points - curPts) / (nxtPts - curPts)));
+                    const segStart = (segIdx / segments) * 100;
+                    const segEnd = ((segIdx + 1) / segments) * 100;
+                    pct = segStart + within * (segEnd - segStart);
+                }
                 if (rankProgressFill) rankProgressFill.style.width = `${pct}%`;
 
                 if (rankProgressMarkers) {
+                    const order = thresholds.map(x => x.name);
                     rankProgressMarkers.querySelectorAll('.rank-marker').forEach(el => {
                         const r = el.getAttribute('data-rank') || '';
-                        const def = thresholds.find(x => x.name === r) || null;
-                        if (!def) return;
-                        const left = Math.max(0, Math.min(100, (Number(def.points || 0) / maxPoints) * 100));
+                        const idx = order.indexOf(r);
+                        if (idx === -1) return;
+                        const left = Math.max(0, Math.min(100, (idx / Math.max(1, (order.length - 1))) * 100));
                         el.style.left = `${left}%`;
                         if (left <= 1) el.style.transform = 'translateX(0%)';
                         else if (left >= 99) el.style.transform = 'translateX(-100%)';
