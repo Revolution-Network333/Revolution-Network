@@ -3069,3 +3069,160 @@ input:checked + .slider:before {
     grid-template-columns: 1fr;
   }
 }
+
+:root {
+  --rn-bg: #06070b;
+  --rn-card: rgba(17, 19, 24, 0.92);
+  --rn-card-2: rgba(12, 14, 18, 0.72);
+  --rn-border: rgba(255, 255, 255, 0.08);
+  --rn-text: #e5e7eb;
+  --rn-muted: #9ca3af;
+  --rn-strong: #ffffff;
+  --rn-accent: #10b981;
+  --rn-accent-2: #a78bfa;
+  --rn-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+body {
+  background-image: none;
+  background:
+    radial-gradient(1200px circle at 20% 0%, rgba(99, 102, 241, 0.12), transparent 60%),
+    radial-gradient(900px circle at 70% 20%, rgba(16, 185, 129, 0.10), transparent 60%),
+    radial-gradient(900px circle at 50% 110%, rgba(59, 130, 246, 0.10), transparent 65%),
+    var(--rn-bg);
+}
+
+body::before {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+.sidebar {
+  background-color: rgba(10, 11, 14, 0.92);
+  border-right: 1px solid var(--rn-border);
+}
+
+.top-header {
+  background: rgba(6, 7, 11, 0.55);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rn-border);
+}
+
+.menu-item.active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stat-card,
+.chart-card,
+.mining-section,
+.data-table {
+  background: var(--rn-card);
+  border: 1px solid var(--rn-border);
+  box-shadow: var(--rn-shadow);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 65px rgba(0, 0, 0, 0.55);
+}
+
+.stat-title,
+.stat-label,
+.node-type,
+.legend-item,
+.status-label {
+  color: var(--rn-muted);
+}
+
+.stat-value {
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: var(--rn-strong);
+  background-clip: initial;
+  color: var(--rn-strong);
+  letter-spacing: -0.02em;
+}
+
+.season-rewards .stat-value {
+  color: var(--rn-strong);
+  -webkit-text-fill-color: var(--rn-strong);
+}
+
+.today-rewards .stat-value {
+  color: var(--rn-strong);
+  -webkit-text-fill-color: var(--rn-strong);
+}
+
+.total-points {
+  background: rgba(16, 185, 129, 0.10);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  color: var(--rn-accent);
+}
+
+.wallet-balance {
+  background: rgba(14, 165, 233, 0.10);
+  border: 1px solid rgba(14, 165, 233, 0.18);
+}
+
+.api-credits {
+  background: rgba(99, 102, 241, 0.10);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+}
+
+.manage-btn {
+  border-radius: 9999px;
+  padding: 8px 14px;
+}
+
+.node-details {
+  gap: 10px;
+}
+
+.node-row {
+  background: var(--rn-card-2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9999px;
+  padding: 10px 14px;
+}
+
+.node-value {
+  color: var(--rn-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.node-value.connected {
+  color: var(--rn-accent);
+}
+
+.filter-select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 9999px;
+}
+
+.rewards-table,
+.data-table {
+  border-radius: 16px;
+}
+
+.rewards-table thead tr,
+.data-table thead th {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rewards-table tbody tr:hover,
+.data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.season-card {
+  background:
+    radial-gradient(800px circle at 0% 0%, rgba(167, 139, 250, 0.28), transparent 55%),
+    radial-gradient(600px circle at 100% 20%, rgba(16, 185, 129, 0.22), transparent 55%),
+    rgba(15, 17, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--rn-shadow);
+}
+
+.learn-more-btn {
+  border-radius: 9999px;
+}
