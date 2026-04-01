@@ -45,6 +45,8 @@ router.get('/airdrop/participants', authenticateToken, checkAdmin, async (req, r
     let activeDaysExpr = '';
     if (db.isSQLite) {
       activeDaysExpr = "(julianday('now') - julianday(u.created_at))";
+    } else if (db.isMySQL) {
+      activeDaysExpr = "TIMESTAMPDIFF(DAY, u.created_at, NOW())";
     } else {
       activeDaysExpr = "EXTRACT(DAY FROM (NOW() - u.created_at))";
     }
@@ -107,24 +109,30 @@ router.post('/airdrop/calculate', authenticateToken, checkAdmin, async (req, res
     // Ensure required schema exists (idempotent, DB-agnostic)
     try {
       if (db.isSQLite) {
-        await db.query("ALTER TABLE users ADD COLUMN airdrop_score REAL DEFAULT 0");
-      } else {
-        await db.query("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS airdrop_score NUMERIC(20,4) DEFAULT 0");
-      }
-    } catch (_) {}
-    try {
-      if (db.isSQLite) {
-        await db.query("ALTER TABLE users ADD COLUMN airdrop_allocation REAL DEFAULT 0");
-      } else {
-        await db.query("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS airdrop_allocation NUMERIC(20,4) DEFAULT 0");
-      }
-    } catch (_) {}
-    try {
-      if (db.isSQLite) {
-        await db.query("ALTER TABLE users ADD COLUMN last_airdrop_calculation TEXT");
-      } else {
-        await db.query("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS last_airdrop_calculation TIMESTAMP");
-      }
+      await db.query("ALTER TABLE users ADD COLUMN airdrop_score REAL DEFAULT 0");
+    } else if (db.isMySQL) {
+      try { await db.query("ALTER TABLE users ADD COLUMN airdrop_score DECIMAL(20,4) DEFAULT 0"); } catch(_) {}
+    } else {
+      await db.query("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS airdrop_score NUMERIC(20,4) DEFAULT 0");
+    }
+  } catch (_) {}
+  try {
+    if (db.isSQLite) {
+      await db.query("ALTER TABLE users ADD COLUMN airdrop_allocation REAL DEFAULT 0");
+    } else if (db.isMySQL) {
+      try { await db.query("ALTER TABLE users ADD COLUMN airdrop_allocation DECIMAL(20,4) DEFAULT 0"); } catch(_) {}
+    } else {
+      await db.query("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS airdrop_allocation NUMERIC(20,4) DEFAULT 0");
+    }
+  } catch (_) {}
+  try {
+    if (db.isSQLite) {
+      await db.query("ALTER TABLE users ADD COLUMN last_airdrop_calculation TEXT");
+    } else if (db.isMySQL) {
+      try { await db.query("ALTER TABLE users ADD COLUMN last_airdrop_calculation TIMESTAMP NULL"); } catch(_) {}
+    } else {
+      await db.query("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS last_airdrop_calculation TIMESTAMP");
+    }
     } catch (_) {}
     try {
       if (db.isSQLite) {
@@ -272,6 +280,12 @@ router.post('/airdrop/award', authenticateToken, checkAdmin, async (req, res) =>
             [u.id, `%\"campaign_id\":\"${campaignId}\"%`]
           );
           alreadyAwarded = (chk.rows && chk.rows.length > 0);
+        } else if (db.isMySQL) {
+          const chk = await client.query(
+            `SELECT id FROM wallet_events WHERE user_id = $1 AND type = 'airdrop' AND JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.campaign_id')) = $2 LIMIT 1`,
+            [u.id, campaignId]
+          );
+          alreadyAwarded = (chk.rows && chk.rows.length > 0);
         } else {
           const chk = await client.query(
             `SELECT id FROM wallet_events WHERE user_id = $1 AND type = 'airdrop' AND (metadata::json->>'campaign_id') = $2 LIMIT 1`,
@@ -398,6 +412,8 @@ router.post('/settings/airdrop-supply', authenticateToken, checkAdmin, async (re
     const val = String(circulatingSupply);
     if (db.isSQLite) {
       await db.query("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('airdrop_circulating_supply', $1, CURRENT_TIMESTAMP)", [val]);
+    } else if (db.isMySQL) {
+      await db.query("INSERT INTO settings (\`key\`, value, updated_at) VALUES ('airdrop_circulating_supply', $1, NOW()) ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = NOW()", [val]);
     } else {
       await db.query(`
         INSERT INTO settings (key, value, updated_at) VALUES ('airdrop_circulating_supply', $1, CURRENT_TIMESTAMP)
@@ -442,6 +458,8 @@ router.get('/airdrop/participants', authenticateToken, checkAdmin, async (req, r
         let activeDaysExpr = '';
         if (db.isSQLite) {
             activeDaysExpr = "(julianday('now') - julianday(created_at))";
+        } else if (db.isMySQL) {
+            activeDaysExpr = "TIMESTAMPDIFF(DAY, created_at, NOW())";
         } else {
             // PostgreSQL
             activeDaysExpr = "EXTRACT(DAY FROM (NOW() - created_at))";

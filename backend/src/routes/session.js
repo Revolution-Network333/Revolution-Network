@@ -49,6 +49,15 @@ router.post('/create', authenticateToken, async (req, res) => {
            AND ((julianday('now') - julianday(COALESCE(last_ping, start_time))) * 86400) > 300`,
         [ipAddress]
       );
+    } else if (db.isMySQL) {
+      await db.query(
+        `UPDATE sessions
+         SET end_time = NOW(), is_active = false, status = 'expired'
+         WHERE ip_address = $1 
+           AND is_active = true
+           AND TIMESTAMPDIFF(SECOND, COALESCE(last_ping, start_time), NOW()) > 300`,
+        [ipAddress]
+      );
     } else {
       await db.query(
         `UPDATE sessions
@@ -113,14 +122,25 @@ router.post('/create', authenticateToken, async (req, res) => {
     const sessionToken = uuidv4();
     const nodeName = generateNodeName();
     
-    const result = await db.query(
-      `INSERT INTO sessions (user_id, session_token, ip_address, user_agent, name)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, session_token, start_time, name`,
-      [userId, sessionToken, ipAddress, userAgent, nodeName]
-    );
-    
-    const session = result.rows[0];
+    let session;
+    if (db.isMySQL) {
+      const result = await db.query(
+        `INSERT INTO sessions (user_id, session_token, ip_address, user_agent, name)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [userId, sessionToken, ipAddress, userAgent, nodeName]
+      );
+      const insertId = result.insertId;
+      const row = await db.query('SELECT id, session_token, start_time, name FROM sessions WHERE id = $1', [insertId]);
+      session = row.rows[0];
+    } else {
+      const result = await db.query(
+        `INSERT INTO sessions (user_id, session_token, ip_address, user_agent, name)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, session_token, start_time, name`,
+        [userId, sessionToken, ipAddress, userAgent, nodeName]
+      );
+      session = result.rows[0];
+    }
     
     res.status(201).json({
       sessionId: session.id,
@@ -152,16 +172,20 @@ router.post('/end/:sessionId', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     
     // Vérifier que la session appartient à l'utilisateur
-    const result = await db.query(
-      `UPDATE sessions
-       SET end_time = CURRENT_TIMESTAMP, is_active = false
-       WHERE id = $1 AND user_id = $2
-       RETURNING id`,
-      [sessionId, userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Session not found' });
+    if (db.isMySQL) {
+      await db.query(
+        `UPDATE sessions
+         SET end_time = NOW(), is_active = false
+         WHERE id = $1 AND user_id = $2`,
+        [sessionId, userId]
+      );
+    } else {
+      await db.query(
+        `UPDATE sessions
+         SET end_time = CURRENT_TIMESTAMP, is_active = false
+         WHERE id = $1 AND user_id = $2`,
+        [sessionId, userId]
+      );
     }
     
     res.json({ success: true, sessionId });
@@ -208,7 +232,7 @@ router.get('/history', authenticateToken, async (req, res) => {
         s.peers_connected,
         COALESCE(SUM(bl.bytes_sent), 0) as total_bytes_sent,
         COALESCE(SUM(bl.bytes_received), 0) as total_bytes_received,
-        EXTRACT(EPOCH FROM (COALESCE(s.end_time, CURRENT_TIMESTAMP) - s.start_time)) as duration_seconds
+        ${db.isMySQL ? 'TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, NOW()))' : 'EXTRACT(EPOCH FROM (COALESCE(s.end_time, CURRENT_TIMESTAMP) - s.start_time))'} as duration_seconds
        FROM sessions s
        LEFT JOIN bandwidth_logs bl ON s.id = bl.session_id
        WHERE s.user_id = $1
