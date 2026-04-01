@@ -382,7 +382,7 @@ async function ensureSqliteMigrations() {
     await run(`CREATE TABLE IF NOT EXISTS user_entitlements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
-      feature TEXT NOT NULL,
+      feature VARCHAR(100) NOT NULL,
       active INTEGER DEFAULT 1,
       metadata TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -557,7 +557,7 @@ async function ensurePostgresSchema() {
         CREATE TABLE IF NOT EXISTS user_entitlements (
           id SERIAL PRIMARY KEY,
           user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          feature TEXT NOT NULL,
+          feature VARCHAR(100) NOT NULL,
           active BOOLEAN DEFAULT TRUE,
           metadata TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -980,7 +980,7 @@ async function ensureMySqlSchema() {
       await client.query(`CREATE TABLE IF NOT EXISTS user_entitlements (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         user_id BIGINT UNSIGNED NOT NULL,
-        feature TEXT NOT NULL,
+        feature VARCHAR(100) NOT NULL,
         active BOOLEAN DEFAULT TRUE,
         metadata TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
