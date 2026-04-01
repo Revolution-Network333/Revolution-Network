@@ -114,10 +114,15 @@ router.get('/stats', authenticateToken, async (req, res) => {
     const totalPoints = userResult.rows[0]?.total_points || 0;
     const rank = userResult.rows[0]?.rank || 'Bronze';
 
+    // Correction MySQL : s.end_time peut être NULL pour les sessions actives
+    const durationExpr = db.isMySQL 
+      ? 'TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, NOW()))' 
+      : 'EXTRACT(EPOCH FROM (COALESCE(s.end_time, CURRENT_TIMESTAMP) - s.start_time))';
+
     const statsResult = await db.query(
       `SELECT 
         COUNT(DISTINCT s.id) as total_sessions,
-        COALESCE(SUM(${db.isMySQL ? 'TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, NOW()))' : 'EXTRACT(EPOCH FROM (COALESCE(s.end_time, CURRENT_TIMESTAMP) - s.start_time))'}), 0) as total_time_seconds,
+        COALESCE(SUM(${durationExpr}), 0) as total_time_seconds,
         COALESCE(SUM(bl.bytes_sent), 0) as total_bytes_sent,
         COALESCE(SUM(bl.bytes_received), 0) as total_bytes_received
        FROM sessions s
@@ -127,7 +132,6 @@ router.get('/stats', authenticateToken, async (req, res) => {
     );
     
     // Stats du jour
-    // Fix: Calculate points separately to avoid session start time constraint
     const todayPointsResult = await db.query(
       `SELECT COALESCE(SUM(rl.amount), 0) as today_points
        FROM rewards_ledger rl
@@ -138,7 +142,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
     const todayStatsResult = await db.query(
       `SELECT 
         COUNT(DISTINCT s.id) as today_sessions,
-        COALESCE(SUM(${db.isMySQL ? 'TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, NOW()))' : 'EXTRACT(EPOCH FROM (COALESCE(s.end_time, CURRENT_TIMESTAMP) - s.start_time))'}), 0) as today_time_seconds,
+        COALESCE(SUM(${durationExpr}), 0) as today_time_seconds,
         COALESCE(SUM(bl.bytes_sent), 0) as today_bytes_sent,
         COALESCE(SUM(bl.bytes_received), 0) as today_bytes_received
        FROM sessions s

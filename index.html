@@ -2015,7 +2015,8 @@
                 }
                 if (data.today) {
                     const todayPoints = document.getElementById('dashboard-today-points');
-                    if (todayPoints) todayPoints.textContent = Math.floor(data.today.today_points || 0);
+                    const pts = Math.floor(data.today.today_points || 0);
+                    if (todayPoints) todayPoints.textContent = pts;
                     
                     const activeNodes = document.getElementById('dashboard-active-nodes');
                     if (activeNodes) activeNodes.textContent = data.today.today_sessions || 0;
