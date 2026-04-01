@@ -895,6 +895,70 @@ async function ensureMySqlSchema() {
         // Column likely already exists
       }
 
+      await client.query(`CREATE TABLE IF NOT EXISTS bandwidth_logs (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        session_id BIGINT UNSIGNED NOT NULL,
+        user_id BIGINT UNSIGNED NOT NULL,
+        bytes_sent BIGINT DEFAULT 0,
+        bytes_received BIGINT DEFAULT 0,
+        duration_seconds INT DEFAULT 0,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        verified BOOLEAN DEFAULT FALSE,
+        PRIMARY KEY (id),
+        KEY idx_bandwidth_logs_session (session_id),
+        KEY idx_bandwidth_logs_user (user_id),
+        KEY idx_bandwidth_logs_timestamp (timestamp),
+        CONSTRAINT fk_bandwidth_logs_session FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+        CONSTRAINT fk_bandwidth_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+      await client.query(`CREATE TABLE IF NOT EXISTS daily_stats (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT UNSIGNED NOT NULL,
+        date DATE NOT NULL,
+        total_time_seconds INT DEFAULT 0,
+        total_bytes_sent BIGINT DEFAULT 0,
+        total_bytes_received BIGINT DEFAULT 0,
+        total_points_earned INT DEFAULT 0,
+        sessions_count INT DEFAULT 0,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_daily_stats_user_date (user_id, date),
+        KEY idx_daily_stats_user (user_id),
+        KEY idx_daily_stats_date (date),
+        CONSTRAINT fk_daily_stats_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+      await client.query(`CREATE TABLE IF NOT EXISTS fraud_logs (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT UNSIGNED,
+        session_id BIGINT UNSIGNED,
+        fraud_type VARCHAR(100) NOT NULL,
+        description TEXT,
+        severity VARCHAR(20) DEFAULT 'low',
+        ip_address VARCHAR(45),
+        detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_fraud_logs_user (user_id),
+        KEY idx_fraud_logs_session (session_id),
+        KEY idx_fraud_logs_detected (detected_at),
+        CONSTRAINT fk_fraud_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        CONSTRAINT fk_fraud_logs_session FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+      await client.query(`CREATE TABLE IF NOT EXISTS peer_connections (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        session_id BIGINT UNSIGNED NOT NULL,
+        peer_user_id BIGINT UNSIGNED,
+        peer_session_id BIGINT UNSIGNED,
+        connected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        disconnected_at TIMESTAMP NULL,
+        bytes_exchanged BIGINT DEFAULT 0,
+        PRIMARY KEY (id),
+        KEY idx_peer_connections_session (session_id),
+        KEY idx_peer_connections_peer_user (peer_user_id),
+        CONSTRAINT fk_peer_connections_session FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
       await client.query(`CREATE TABLE IF NOT EXISTS referrals (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         referrer_user_id BIGINT UNSIGNED NOT NULL,
