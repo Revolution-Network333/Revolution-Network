@@ -1,5 +1,4 @@
 # Backend - garder en local
-backend/
 *.env
 *.db
 *.db-shm
