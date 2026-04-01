@@ -38,15 +38,6 @@
                     </svg>
                     <span data-i18n="menu.overview">Vue d'ensemble</span>
                 </button>
-                <button class="menu-item" onclick="setPage('nodes')">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
-                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
-                    </svg>
-                    <span data-i18n="menu.nodes">Mes Nœuds</span>
-                </button>
                 <!-- Onglet Récompenses supprimé -->
                 <button class="menu-item" onclick="setPage('referrals')">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1842,12 +1833,6 @@
                         <div class="stat-card node-status">
                             <div class="stat-header-row">
                                 <div class="stat-title">${t('overview.nodesStatus')}</div>
-                                <button class="manage-btn" onclick="setPage('nodes')">
-                                    ${t('overview.manage')}
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="9 18 15 12 9 6"></polyline>
-                                    </svg>
-                                </button>
                             </div>
                             <div class="node-details">
                                 <div class="node-row">
@@ -5991,6 +5976,13 @@ function initializeShopPage() {
             const faqs = {
                 fr: [
                     {
+                        id: 'utility',
+                        triggers: ['a quoi ca sert', 'utilite', 'usage', 'ia', 'bande passante', 'revenu passif', 'airdrop'],
+                        question: "À quoi ça sert ?",
+                        answer:
+`On utilise la bande passante inutilisée de l'utilisateur de l'extension pour résoudre des calculs pour les IA et qu'en échange nous sommes rémunérés, ce qui permettra de faire des airdrops pour les utilisateurs, ce qui sera une source de revenu passif en plus.`
+                    },
+                    {
                         id: 'about',
                         triggers: ['c est quoi', "c'est quoi", 'révolution network', 'projet', 'plateforme', 'concept', 'but', 'objectif'],
                         question: "C’est quoi Révolution Network ?",
@@ -6172,6 +6164,13 @@ Si tu veux une réponse précise adaptée à ton cas, crée un ticket support av
                     }
                 ],
                 en: [
+                    {
+                        id: 'utility',
+                        triggers: ['what is it for', 'utility', 'usage', 'ai', 'bandwidth', 'passive income', 'airdrop'],
+                        question: "What is it for?",
+                        answer:
+`We use the unused bandwidth of the extension user to solve calculations for AI and in exchange we are paid, which will allow us to do airdrops for users, which will be an additional source of passive income.`
+                    },
                     {
                         id: 'about',
                         triggers: ['what is', 'revolution network', 'project', 'platform', 'purpose'],
