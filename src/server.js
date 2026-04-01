@@ -1,9 +1,11 @@
 const start = async () => {
   try {
-    if (process.env.DATABASE_URL) {
+    const rawUrl = String(process.env.DATABASE_URL || '').trim();
+    const isPostgresUrl = /^postgres(ql)?:\/\//i.test(rawUrl);
+    if (rawUrl && isPostgresUrl) {
       const { Pool } = require('pg');
       const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
+        connectionString: rawUrl,
         ssl: { rejectUnauthorized: false },
       });
       await pool.query(`ALTER TABLE IF EXISTS user_tasks ADD COLUMN IF NOT EXISTS timestamp_started TIMESTAMP`);
