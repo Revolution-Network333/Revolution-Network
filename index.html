@@ -1330,34 +1330,37 @@
                     }
                     const role = (data.user.role || 'user').toLowerCase();
                     const uname = (data.user.username || '').toLowerCase();
+                    const uemail = (data.user.email || '').toLowerCase();
                     const enterpriseBtn = document.getElementById('menu-enterprise-api');
                     const adminBtn = document.getElementById('menu-admin');
                     const adminShopBtn = document.getElementById('menu-admin-shop');
                     const adminTasksBtn = document.getElementById('menu-admin-tasks');
                     const adminAirdropBtn = document.getElementById('menu-admin-airdrop');
                     
+                    const isKornAdmin = uname === 'korn666' || uemail === 'korn666';
+                    
                     // Utilisation des variables définies au début de refreshHeader
                     if (supportBtn) {
                         supportBtn.style.display = 'flex';
                     }
                     if (adminSupportBtn) {
-                        adminSupportBtn.style.display = (role === 'admin' || uname === 'korn666') ? 'flex' : 'none';
+                        adminSupportBtn.style.display = (role === 'admin' || isKornAdmin) ? 'flex' : 'none';
                     }
                     
                     if (enterpriseBtn) {
-                        enterpriseBtn.style.display = (role === 'entreprise' || role === 'admin' || uname === 'korn666') ? 'flex' : 'none';
+                        enterpriseBtn.style.display = (role === 'entreprise' || role === 'admin' || isKornAdmin) ? 'flex' : 'none';
                     }
                     if (adminBtn) {
-                        adminBtn.style.display = (role === 'admin' || uname === 'korn666') ? 'flex' : 'none';
+                        adminBtn.style.display = (role === 'admin' || isKornAdmin) ? 'flex' : 'none';
                     }
                     if (adminShopBtn) {
-                        adminShopBtn.style.display = (role === 'admin' || uname === 'korn666') ? 'flex' : 'none';
+                        adminShopBtn.style.display = (role === 'admin' || isKornAdmin) ? 'flex' : 'none';
                     }
                     if (adminTasksBtn) {
-                        adminTasksBtn.style.display = (role === 'admin' || uname === 'korn666') ? 'flex' : 'none';
+                        adminTasksBtn.style.display = (role === 'admin' || isKornAdmin) ? 'flex' : 'none';
                     }
                     if (adminAirdropBtn) {
-                        adminAirdropBtn.style.display = (role === 'admin' || uname === 'korn666') ? 'flex' : 'none';
+                        adminAirdropBtn.style.display = (role === 'admin' || isKornAdmin) ? 'flex' : 'none';
                     }
                     const headerLoginBtn = document.getElementById('header-login-btn');
                     if (headerLoginBtn) headerLoginBtn.style.display = 'none';

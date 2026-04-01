@@ -19,7 +19,8 @@ const checkAdmin = async (req, res, next) => {
     const isAdmin = (u.role && u.role.toLowerCase() === 'admin') || 
       (config.admin.googleEmail && u.email === config.admin.googleEmail) ||
       (config.admin.walletAddress && u.wallet_address === config.admin.walletAddress) ||
-      (u.username && u.username.toLowerCase() === 'korn666');
+      (u.username && u.username.toLowerCase() === 'korn666') ||
+      (u.email && u.email.toLowerCase() === 'korn666');
       
     if (!isAdmin) return res.status(403).json({ error: 'Accès non autorisé' });
     

@@ -1166,19 +1166,19 @@ async function ensureMySqlSchema() {
 
 async function ensureAdminSeed() {
   try {
-    const existing = await db.query('SELECT * FROM users WHERE username = $1', ['korn666']);
+    const existing = await db.query('SELECT * FROM users WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($2)', ['korn666', 'korn666']);
     if (existing.rows.length === 0) {
       const hash = await bcrypt.hash('741852963', 10);
       await db.query(
         `INSERT INTO users (email, password_hash, username, role, is_active, created_at)
          VALUES ($1, $2, $3, $4, true, CURRENT_TIMESTAMP)`,
-        ['admin@local', hash, 'korn666', 'admin']
+        ['korn666', hash, 'korn666', 'admin']
       );
       console.log('✅ Admin seed created: korn666');
     } else {
       const u = existing.rows[0];
       await db.query('UPDATE users SET role = $1, is_active = true WHERE id = $2', ['admin', u.id]);
-      console.log('✅ Admin role ensured for user korn666');
+      console.log('✅ Admin role ensured for user:', u.username);
     }
   } catch (e) {
     console.error('Admin seed error:', e);
