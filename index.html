@@ -1289,7 +1289,10 @@
             .then(data => {
                 if (data.user) {
                     currentUsername = data.user.username || null;
-                    try { window.currentUserId = data.user.id; } catch {}
+                    try { 
+                        window.currentUserId = data.user.id;
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                    } catch {}
                     const tp = document.getElementById('header-total-points');
                     if (tp) tp.textContent = `Total: ${data.user.total_points} pt`;
                     // Afficher le bonus de minage
@@ -4922,41 +4925,76 @@ function initializeShopPage() {
 
         function getWalletHTML() {
             return `
-                <div class="page-content">
-                    <div class="page-header">
-                        <div style="position:relative;display:inline-block;">
-                            <h1 class="page-title">${t('wallet.title')}</h1>
-                            <img src="12345.png" alt="Wallet Aether (ATH)" style="position:absolute;left:0;top:100%;margin-top:8px;display:block;max-width:210px;width:100%;height:auto;pointer-events:none;">
-                        </div>
+                <div class="page-content futuristic-wallet">
+                    <div class="page-header" style="justify-content: center; margin-bottom: 40px;">
+                        <h1 class="page-title neon-text" style="font-size: 2.5rem; text-transform: uppercase; letter-spacing: 4px;">
+                            ${t('wallet.title')}
+                        </h1>
                     </div>
-                    <div class="profile-card" style="max-width:720px;margin:0 auto;">
-                        <div class="detail-grid">
-                            <div><strong>${t('wallet.balance')}</strong><div id="wallet-balance">0</div></div>
-                            <div><strong>${t('wallet.stake.active')}</strong><div id="stake-info">${t('wallet.none')}</div></div>
-                        </div>
-                        <div class="api-section">
-                            <h2 class="section-title">${t('wallet.staking.title')}</h2>
-                            <div style="margin-bottom:8px;color:#9ca3af;">${t('wallet.stake.balance')}: <strong id="stake-wallet-balance">0</strong> Aether</div>
-                            <div class="form-grid">
-                                <div><label>${t('wallet.stake.amount')}</label><input type="number" id="stake-amount" min="0" step="0.0001"></div>
-                                <div style="align-self:end"><button class="profile-btn" id="stake-btn">${t('wallet.stake.btn')}</button></div>
-                                <div><label>${t('wallet.withdraw.amount')}</label><input type="number" id="withdraw-amount" min="0" step="0.0001" placeholder="Montant"></div>
-                            <div><label>Adresse Solana</label><input type="text" id="withdraw-address" placeholder="Votre adresse Solana"></div>
-                            <div style="align-self:end"><button class="profile-btn secondary" id="withdraw-btn">${t('wallet.withdraw.btn')}</button></div>
+                    
+                    <div class="wallet-layout">
+                        <!-- Left Column: Balances & Stats -->
+                        <div class="wallet-main-card glass-card neon-border-green">
+                            <div class="balance-display">
+                                <div class="balance-item main-balance">
+                                    <span class="label">${t('wallet.balance')}</span>
+                                    <div class="value-container">
+                                        <span class="value" id="wallet-balance">0</span>
+                                        <span class="unit">ATH</span>
+                                    </div>
+                                </div>
+                                <div class="balance-item active-stake">
+                                    <span class="label">${t('wallet.stake.active')}</span>
+                                    <div class="value-container">
+                                        <span class="value small" id="stake-info">${t('wallet.none')}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div style="margin-top:12px;">
-                                <button class="profile-btn" id="unstake-btn">${t('wallet.unstake.btn')}</button>
+
+                            <div class="staking-actions">
+                                <h2 class="section-title-mini">${t('wallet.staking.title')}</h2>
+                                <p class="wallet-info">${t('wallet.stake.balance')}: <span id="stake-wallet-balance" class="highlight">0</span> ATH</p>
+                                
+                                <div class="action-grid">
+                                    <div class="input-group">
+                                        <label>${t('wallet.stake.amount')}</label>
+                                        <div class="input-wrapper">
+                                            <input type="number" id="stake-amount" min="0" step="0.0001" placeholder="0.00">
+                                            <button class="neon-button primary" id="stake-btn">${t('wallet.stake.btn')}</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="input-group">
+                                        <label>${t('wallet.withdraw.amount')}</label>
+                                        <input type="number" id="withdraw-amount" min="0" step="0.0001" placeholder="Montant">
+                                    </div>
+                                    
+                                    <div class="input-group">
+                                        <label>Adresse Solana</label>
+                                        <input type="text" id="withdraw-address" placeholder="Solana Address">
+                                    </div>
+                                    
+                                    <div class="button-group">
+                                        <button class="neon-button secondary" id="withdraw-btn">${t('wallet.withdraw.btn')}</button>
+                                        <button class="neon-button outline" id="unstake-btn">${t('wallet.unstake.btn')}</button>
+                                    </div>
+                                </div>
+                                <div class="notice-box-glass">${t('wallet.notice')}</div>
                             </div>
-                            <div class="shop-warning">${t('wallet.notice')}</div>
                         </div>
-                        <div class="api-section">
-                            <h2 class="section-title">${t('wallet.nfts.title')}</h2>
-                            <div id="wallet-nfts"></div>
-                            <div id="wallet-nfts-history" style="margin-top:12px;"></div>
-                        </div>
-                        <div class="api-section">
-                            <h2 class="section-title">${t('wallet.history')}</h2>
-                            <div id="wallet-history"></div>
+
+                        <!-- Right Column: NFTs & History -->
+                        <div class="wallet-side-column">
+                            <div class="glass-card nft-card neon-border-blue">
+                                <h2 class="section-title-mini">${t('wallet.nfts.title')}</h2>
+                                <div id="wallet-nfts" class="nft-display"></div>
+                                <div id="wallet-nfts-history" class="history-mini"></div>
+                            </div>
+
+                            <div class="glass-card history-card neon-border-purple">
+                                <h2 class="section-title-mini">${t('wallet.history')}</h2>
+                                <div id="wallet-history" class="history-container"></div>
+                            </div>
                         </div>
                     </div>
                 </div>

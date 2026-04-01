@@ -20,12 +20,13 @@ async function resolveApiUrl() {
 let sessionId = null;
 let isActive = false;
 let sessionPoints = 0;
-let miningLoopId = null;
+let miningRunning = false;
 let logs = [];
 let vpnEnabled = false;
 
 async function getStoredTokens() {
-  const s = await chrome.storage.local.get(['token','refreshToken']);
+  const s = await chrome.storage.local.get(['token','refreshToken','sessionPoints']);
+  if (s.sessionPoints !== undefined) sessionPoints = s.sessionPoints;
   return { token: s.token || null, refreshToken: s.refreshToken || null };
 }
 
@@ -34,7 +35,8 @@ async function setStoredToken(token) {
 }
 
 async function clearStoredTokens() {
-  await chrome.storage.local.set({ isActive: false, sessionId: null, token: null, refreshToken: null });
+  await chrome.storage.local.set({ isActive: false, sessionId: null, token: null, refreshToken: null, sessionPoints: 0 });
+  sessionPoints = 0;
 }
 
 async function tryRefreshToken() {
@@ -71,8 +73,8 @@ async function fetchWithAuth(url, init = {}, retry = true) {
   if (res.status === 401 && retry) {
     const newToken = await tryRefreshToken();
     if (newToken) {
-      headers['Authorization'] = `Bearer ${newToken}`;
-      res = await fetch(url, Object.assign({}, init, { headers }));
+      const retryHeaders = Object.assign({}, headers, { 'Authorization': `Bearer ${newToken}` });
+      res = await fetch(url, Object.assign({}, init, { headers: retryHeaders }));
     } else {
       await clearStoredTokens();
       isActive = false;
@@ -108,13 +110,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 async function initFromStorage() {
   await resolveApiUrl();
-  const s = await chrome.storage.local.get(['isActive','sessionId','token']);
+  const s = await chrome.storage.local.get(['isActive','sessionId','token','sessionPoints']);
   isActive = !!s.isActive;
   sessionId = s.sessionId || null;
+  sessionPoints = s.sessionPoints || 0;
+  
   if (isActive) {
     ensureAlarm();
     if (!sessionId && s.token) {
       try { await startMiningSession(s.token); } catch {}
+    } else if (sessionId && s.token && !miningRunning) {
+      mine(s.token);
     }
   }
 }
@@ -127,11 +133,16 @@ chrome.runtime.onInstalled.addListener(() => { initFromStorage(); });
 chrome.runtime.onStartup.addListener(() => { initFromStorage(); });
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== ALARM_NAME) return;
-  const s = await chrome.storage.local.get(['isActive','token']);
+  const s = await chrome.storage.local.get(['isActive','token','sessionId']);
   if (!s.isActive) return;
-  if (!isActive && s.token) {
+  
+  // Sync global state if needed
+  isActive = true;
+  sessionId = s.sessionId;
+  
+  if (!sessionId && s.token) {
     try { await startMiningSession(s.token); } catch {}
-  } else if (isActive && s.token && !miningLoopId) {
+  } else if (s.token && !miningRunning) {
     mine(s.token);
   }
 });
@@ -143,7 +154,7 @@ function addLog(msg) {
 
 // Start a session
 async function startMiningSession(token) {
-  if (isActive) return;
+  if (isActive && sessionId && miningRunning) return;
   
   try {
     addLog('Initializing session...');
@@ -172,9 +183,10 @@ async function startMiningSession(token) {
       isActive: true, 
       sessionId,
       token,
+      sessionPoints: 0
     });
     
-    addLog(`Session active: ${data.nodeName || sessionId}`);
+    addLog(`Session active: ${data.name || sessionId}`);
     ensureAlarm();
     
     // Notification
@@ -186,14 +198,16 @@ async function startMiningSession(token) {
     });
     
     // Start PoW mining
-    mine(token);
+    if (!miningRunning) {
+      mine(token);
+    }
     
   } catch (error) {
-    if (error && error.message === 'invalid_token') {
+    if (error && (error.message === 'invalid_token' || error.message === 'Unauthorized')) {
       addLog('Session expired — please sign in again on the website.');
       isActive = false;
       sessionId = null;
-      await chrome.storage.local.set({ isActive: false, sessionId: null, token: null, refreshToken: null });
+      await clearStoredTokens();
       try { chrome.notifications.create({ type: 'basic', iconUrl: 'assets/icon-128.png', title: 'Revolution Network', message: 'Session expired — open the website and sign in again.' }); } catch {}
     } else {
       addLog(`Error: ${error.message}`);
@@ -203,8 +217,6 @@ async function startMiningSession(token) {
 }
 
 async function stopMiningSession(token) {
-  if (!isActive) return;
-  
   addLog('Stopping mining...');
   isActive = false;
   
@@ -246,6 +258,9 @@ async function toggleVpn(token) {
 }
 // Boucle de minage PoW
 async function mine(token) {
+    if (miningRunning) return;
+    miningRunning = true;
+    
     const challenge = 'revolution_network_challenge_' + Date.now();
     let nonce = 0;
     
@@ -274,7 +289,7 @@ async function mine(token) {
             } else {
                 nonce++;
                 // Petite pause tous les N hashs pour rendre la main au système
-                if (nonce % 500 === 0) {
+                if (nonce % 1000 === 0) {
                     await new Promise(r => setTimeout(r, 10));
                 }
             }
@@ -283,6 +298,7 @@ async function mine(token) {
             await new Promise(r => setTimeout(r, 5000));
         }
     }
+    miningRunning = false;
 }
 
 async function submitProof(token, challenge, nonce) {
@@ -297,6 +313,7 @@ async function submitProof(token, challenge, nonce) {
         const data = await res.json().catch(()=>null);
         if (res.ok && data && data.success) {
             sessionPoints += data.points_earned;
+            await chrome.storage.local.set({ sessionPoints });
             addLog(`Accepted! +${data.points_earned} pts`);
         } else {
             const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
