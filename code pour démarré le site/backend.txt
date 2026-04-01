@@ -1,0 +1,14 @@
+backend : 
+
+cd "C:\Users\mxmpr\Desktop\Révolution Network\backend"
+git add .
+git commit -m "fix: modification backend"
+git push
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+
+git commit --allow-empty -m "redeploy"
+git push

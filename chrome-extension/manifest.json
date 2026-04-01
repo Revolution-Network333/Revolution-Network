@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Revolution Network",
+  "version": "1.0.0",
+  "description": "Share your bandwidth and earn points",
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications",
+    "proxy",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://localhost:3001/*",
+    "https://revolution-backend-sal2.onrender.com/*",
+    "https://revolution-network.fr/*",
+    "https://www.revolution-network.fr/*",
+    "https://revolution-network.io/*",
+    "https://azurus333.github.io/*"
+  ],
+  "background": {
+    "service_worker": "js/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "32": "assets/icon-32.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon-16.png",
+    "32": "assets/icon-32.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+  "web_accessible_resources": [{
+    "resources": ["assets/back.JPEG", "assets/back.jpeg", "assets/back.jpg", "assets/*"],
+    "matches": ["<all_urls>"]
+  }],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
