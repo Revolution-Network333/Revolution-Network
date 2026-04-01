@@ -844,7 +844,7 @@ async function ensureMySqlSchema() {
         role VARCHAR(20) DEFAULT 'user',
         referral_code VARCHAR(64),
         referrer_id BIGINT UNSIGNED,
-        rank VARCHAR(50) DEFAULT 'Bronze',
+        \`rank\` VARCHAR(50) DEFAULT 'Bronze',
         google_sub VARCHAR(255),
         stripe_customer_id VARCHAR(255),
         is_admin BOOLEAN DEFAULT FALSE,
@@ -1428,9 +1428,6 @@ setInterval(async () => {
     for (const e of nodeEligible) {
       let base = 10;
       try { const m = JSON.parse(e.metadata || '{}'); if (m.pointsPerHour) base = Math.max(1, Math.floor(m.pointsPerHour / 6)); } catch {}
-      // Augmentation du taux de minage passif pour égaler l'extension
-      // Target: ~21 000 points / jour (vs ~28 000 avec extension active)
-      // Base 10 * 15 = 150 pts / 10 min = 900 pts / heure = 21 600 pts / jour
       const rate = Math.max(1, Math.floor(base * 15));
       const bonus = Number(bonusMap.get(e.user_id)) || 0;
       const final = Math.max(1, Math.floor(rate * (1 + (bonus/100))));
@@ -1507,7 +1504,7 @@ app.get('/metrics', async (req, res) => {
 app.get('/api/leaderboard', async (req, res) => {
   try {
     const rows = (await db.query(
-      `SELECT id, username, total_points, rank
+      `SELECT id, username, total_points, \`rank\`
        FROM users
        WHERE COALESCE(is_banned, false) = false
        ORDER BY total_points DESC
