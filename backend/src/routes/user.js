@@ -117,7 +117,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
     const statsResult = await db.query(
       `SELECT 
         COUNT(DISTINCT s.id) as total_sessions,
-        COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(s.end_time, CURRENT_TIMESTAMP) - s.start_time))), 0) as total_time_seconds,
+        COALESCE(SUM(${db.isMySQL ? 'TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, NOW()))' : 'EXTRACT(EPOCH FROM (COALESCE(s.end_time, CURRENT_TIMESTAMP) - s.start_time))'}), 0) as total_time_seconds,
         COALESCE(SUM(bl.bytes_sent), 0) as total_bytes_sent,
         COALESCE(SUM(bl.bytes_received), 0) as total_bytes_received
        FROM sessions s
@@ -131,20 +131,20 @@ router.get('/stats', authenticateToken, async (req, res) => {
     const todayPointsResult = await db.query(
       `SELECT COALESCE(SUM(rl.amount), 0) as today_points
        FROM rewards_ledger rl
-       WHERE rl.user_id = $1 AND rl.created_at::date = CURRENT_DATE`,
+       WHERE rl.user_id = $1 AND ${db.isMySQL ? 'DATE(rl.created_at) = CURDATE()' : 'rl.created_at::date = CURRENT_DATE'}`,
        [userId]
     );
 
     const todayStatsResult = await db.query(
       `SELECT 
         COUNT(DISTINCT s.id) as today_sessions,
-        COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(s.end_time, CURRENT_TIMESTAMP) - s.start_time))), 0) as today_time_seconds,
+        COALESCE(SUM(${db.isMySQL ? 'TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, NOW()))' : 'EXTRACT(EPOCH FROM (COALESCE(s.end_time, CURRENT_TIMESTAMP) - s.start_time))'}), 0) as today_time_seconds,
         COALESCE(SUM(bl.bytes_sent), 0) as today_bytes_sent,
         COALESCE(SUM(bl.bytes_received), 0) as today_bytes_received
        FROM sessions s
        LEFT JOIN bandwidth_logs bl ON s.id = bl.session_id
        WHERE s.user_id = $1
-       AND s.start_time::date = CURRENT_DATE`,
+       AND ${db.isMySQL ? 'DATE(s.start_time) = CURDATE()' : 's.start_time::date = CURRENT_DATE'}`,
       [userId]
     );
     

@@ -56,10 +56,10 @@ router.get('/today', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     
     const result = await db.query(
-      `SELECT COALESCE(SUM(amount), 0) as today_points
+      `SELECT COALESCE(SUM(amount), 0) as points
        FROM rewards_ledger
        WHERE user_id = $1
-       AND created_at >= CURRENT_DATE`,
+       AND ${db.isMySQL ? 'created_at >= CURDATE()' : 'created_at >= CURRENT_DATE'}`,
       [userId]
     );
     
@@ -79,9 +79,9 @@ router.get('/stats', authenticateToken, async (req, res) => {
     
     let dateFilter = '';
     if (period === '7d') {
-      dateFilter = "AND created_at >= CURRENT_DATE - INTERVAL '7 days'";
+      dateFilter = db.isMySQL ? "AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)" : "AND created_at >= CURRENT_DATE - INTERVAL '7 days'";
     } else if (period === '30d') {
-      dateFilter = "AND created_at >= CURRENT_DATE - INTERVAL '30 days'";
+      dateFilter = db.isMySQL ? "AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)" : "AND created_at >= CURRENT_DATE - INTERVAL '30 days'";
     }
     
     const result = await db.query(
@@ -149,6 +149,44 @@ router.get('/calendar', authenticateToken, async (req, res) => {
           SELECT strftime('%Y-%m-%d', start_time) AS period, COUNT(*) AS sessions
           FROM sessions WHERE user_id = $1
           GROUP BY strftime('%Y-%m-%d', start_time) ORDER BY period DESC LIMIT 90`;
+      }
+    } else if (db.isMySQL) {
+      if (granularity === 'yearly') {
+        pointsSql = `
+          SELECT DATE_FORMAT(created_at, '%Y') AS period, COALESCE(SUM(amount),0) AS points
+          FROM rewards_ledger WHERE user_id = $1
+          GROUP BY DATE_FORMAT(created_at, '%Y') ORDER BY period DESC LIMIT 10`;
+        sessionsSql = `
+          SELECT DATE_FORMAT(start_time, '%Y') AS period, COUNT(*) AS sessions
+          FROM sessions WHERE user_id = $1
+          GROUP BY DATE_FORMAT(start_time, '%Y') ORDER BY period DESC LIMIT 10`;
+      } else if (granularity === 'monthly') {
+        pointsSql = `
+          SELECT DATE_FORMAT(created_at, '%Y-%m') AS period, COALESCE(SUM(amount),0) AS points
+          FROM rewards_ledger WHERE user_id = $1
+          GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY period DESC LIMIT 24`;
+        sessionsSql = `
+          SELECT DATE_FORMAT(start_time, '%Y-%m') AS period, COUNT(*) AS sessions
+          FROM sessions WHERE user_id = $1
+          GROUP BY DATE_FORMAT(start_time, '%Y-%m') ORDER BY period DESC LIMIT 24`;
+      } else if (granularity === 'weekly') {
+        pointsSql = `
+          SELECT DATE_FORMAT(created_at, '%x-W%v') AS period, COALESCE(SUM(amount),0) AS points
+          FROM rewards_ledger WHERE user_id = $1
+          GROUP BY DATE_FORMAT(created_at, '%x-W%v') ORDER BY period DESC LIMIT 26`;
+        sessionsSql = `
+          SELECT DATE_FORMAT(start_time, '%x-W%v') AS period, COUNT(*) AS sessions
+          FROM sessions WHERE user_id = $1
+          GROUP BY DATE_FORMAT(start_time, '%x-W%v') ORDER BY period DESC LIMIT 26`;
+      } else {
+        pointsSql = `
+          SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS period, COALESCE(SUM(amount),0) AS points
+          FROM rewards_ledger WHERE user_id = $1
+          GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d') ORDER BY period DESC LIMIT 90`;
+        sessionsSql = `
+          SELECT DATE_FORMAT(start_time, '%Y-%m-%d') AS period, COUNT(*) AS sessions
+          FROM sessions WHERE user_id = $1
+          GROUP BY DATE_FORMAT(start_time, '%Y-%m-%d') ORDER BY period DESC LIMIT 90`;
       }
     } else {
       if (granularity === 'yearly') {

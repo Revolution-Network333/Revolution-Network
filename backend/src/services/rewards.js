@@ -58,7 +58,7 @@ class RewardsService {
         `SELECT COALESCE(SUM(amount), 0) as today_points
          FROM rewards_ledger
          WHERE user_id = $1
-         AND created_at >= CURRENT_DATE`,
+         AND created_at >= ${db.isMySQL ? 'CURDATE()' : 'CURRENT_DATE'}`,
         [log.user_id]
       );
       
@@ -139,7 +139,7 @@ class RewardsService {
       `SELECT COALESCE(SUM(amount), 0) as points
        FROM rewards_ledger
        WHERE user_id = $1
-       AND created_at >= CURRENT_DATE`,
+       AND created_at >= ${db.isMySQL ? 'CURDATE()' : 'CURRENT_DATE'}`,
       [userId]
     );
     

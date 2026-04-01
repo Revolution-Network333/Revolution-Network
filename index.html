@@ -1999,11 +1999,15 @@
             .then(data => {
                 if (data.overall) {
                     const seasonPoints = document.getElementById('dashboard-season-points');
-                    // Fallback to header value if 0 (sometimes stats might be slightly behind or structure mismatch)
-                    // But preferably use the API value.
+                    // Utiliser la valeur du header si les stats API sont à 0 mais que le header a des points
+                    const headerTp = document.getElementById('header-total-points');
+                    let pts = Math.floor(data.overall.total_points || 0);
+                    if (pts === 0 && headerTp && headerTp.textContent.includes(':')) {
+                        const match = headerTp.textContent.match(/(\d+)/);
+                        if (match) pts = parseInt(match[1]);
+                    }
                     if (seasonPoints) {
-                         const points = Math.floor(data.overall.total_points || 0);
-                         seasonPoints.textContent = points;
+                         seasonPoints.textContent = pts;
                     }
                     
                     const totalNodes = document.getElementById('dashboard-total-nodes');
