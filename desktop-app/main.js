@@ -3,6 +3,7 @@ const path = require('path');
 const Store = require('electron-store');
 const crypto = require('crypto');
 
+app.name = 'Revolution Network Node';
 const store = new Store();
 let mainWindow;
 let tray;

@@ -148,7 +148,8 @@ const simulateQuery = async (executor, sql, params = []) => {
       const insertId = result?.insertId;
       if (!table || !insertId) return { rows: [{ id: insertId }], rowCount: result?.affectedRows || 0 };
       if (cols.trim().toLowerCase() === 'id') return { rows: [{ id: insertId }], rowCount: 1 };
-      const [rows] = await executor.query(`SELECT ${cols} FROM ${table} WHERE id = ?`, [insertId]);
+      const selSql = rewriteForMySql(`SELECT ${cols} FROM ${table} WHERE id = ?`);
+      const [rows] = await executor.query(selSql, [insertId]);
       return { rows: rows || [], rowCount: Array.isArray(rows) ? rows.length : 0 };
     }
     
@@ -162,7 +163,8 @@ const simulateQuery = async (executor, sql, params = []) => {
       if (!table || !whereClause) return { rows: [], rowCount: result?.affectedRows || 0 };
       const whereParamValues = getParamValuesForClause(whereClause, params);
       const { sql: selSql, params: selParams } = translatePgParamsToMySql(`SELECT ${cols} FROM ${table} WHERE ${whereClause}`, whereParamValues);
-      const [rows] = await executor.query(selSql, selParams);
+      const normalizedSel = rewriteForMySql(selSql);
+      const [rows] = await executor.query(normalizedSel, selParams);
       return { rows: rows || [], rowCount: Array.isArray(rows) ? rows.length : 0 };
     }
 
@@ -173,7 +175,8 @@ const simulateQuery = async (executor, sql, params = []) => {
       if (table && whereClause) {
         const whereParamValues = getParamValuesForClause(whereClause, params);
         const { sql: selSql, params: selParams } = translatePgParamsToMySql(`SELECT ${cols} FROM ${table} WHERE ${whereClause}`, whereParamValues);
-        const [rowsToReturn] = await executor.query(selSql, selParams);
+        const normalizedSel = rewriteForMySql(selSql);
+        const [rowsToReturn] = await executor.query(normalizedSel, selParams);
         const { sql: translatedSql, params: translatedParams } = translatePgParamsToMySql(baseSql, params);
         const normalized = rewriteForMySql(translatedSql);
         const [result] = await executor.query(normalized, translatedParams);

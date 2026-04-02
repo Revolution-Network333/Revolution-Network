@@ -482,6 +482,9 @@
                 'download.recommended.step4': 'Un raccourci sera créé sur votre bureau.',
                 'download.recommended.step5': 'Lancez l’application et connectez-vous via le bouton “Sign in via website”.',
                 'download.recommended.step6': 'Appuyez sur le bouton ▶ pour commencer à gagner des points.',
+                'download.security.title': '🛡️ Sécurité & Windows SmartScreen',
+                'download.security.desc': "Lors de l'installation, Windows peut afficher un message d'alerte (\"Windows a protégé votre ordinateur\"). **Rassurez-vous, c'est tout à fait normal.** En tant que développeurs indépendants, notre application n'est pas encore \"connue\" par les serveurs de Microsoft. L'application est 100% sûre et ne contient aucun logiciel malveillant.",
+                'download.security.procedure': 'Pour continuer l\'installation, cliquez simplement sur **"Informations complémentaires"** puis sur le bouton **"Exécuter quand même"**.',
                 'tasks.title': 'Airdrop & Tâches',
                 'tasks.validate': 'Valider',
                 'tasks.validated': 'Validée',
@@ -504,7 +507,6 @@
                 'login.password': 'Mot de passe',
                 'login.submit': 'Se connecter',
                 'login.register': 'S’inscrire',
-                'login.google': 'Continuer avec Google',
                 'login.phantom': 'Continuer avec Phantom',
                 'register.title': 'Créer un compte',
                 'register.username': "Nom d'utilisateur",
@@ -760,6 +762,9 @@
                 'download.recommended.step4': 'A shortcut will be created on your desktop.',
                 'download.recommended.step5': 'Launch the app and sign in via the “Sign in via website” button.',
                 'download.recommended.step6': 'Press the ▶ button to start earning points.',
+                'download.security.title': '🛡️ Security & Windows SmartScreen',
+                'download.security.desc': "During installation, Windows may display a warning message (\"Windows protected your PC\"). **Rest assured, this is completely normal.** As independent developers, our application is not yet \"known\" by Microsoft's servers. The application is 100% safe and contains no malware.",
+                'download.security.procedure': 'To continue with the installation, simply click on **"More info"** and then on the **"Run anyway"** button.',
                 'tasks.title': 'Tasks',
                 'tasks.validate': 'Validate',
                 'tasks.validated': 'Validated',
@@ -782,7 +787,6 @@
                 'login.password': 'Password',
                 'login.submit': 'Sign in',
                 'login.register': 'Register',
-                'login.google': 'Continue with Google',
                 'login.phantom': 'Continue with Phantom',
                 'register.title': 'Create account',
                 'register.username': 'Username',
@@ -1014,7 +1018,6 @@
                 'login.password': 'Password',
                 'login.submit': 'Sign in',
                 'login.register': 'Register',
-                'login.google': 'Continue with Google',
                 'login.phantom': 'Continue with Phantom',
                 'register.title': 'Create account',
                 'register.username': 'Username',
@@ -1269,6 +1272,9 @@
                 'download.recommended.step4': 'Se creará un acceso directo en tu escritorio.',
                 'download.recommended.step5': 'Inicia la aplicación y conéctate a través del botón “Sign in via website”.',
                 'download.recommended.step6': 'Presiona el botón ▶ para comenzar a ganar puntos.',
+                'download.security.title': '🛡️ Seguridad y Windows SmartScreen',
+                'download.security.desc': "Durante la instalación, Windows puede mostrar un mensaje de advertencia (\"Windows protegió su PC\"). **Tenga la seguridad de que esto es completamente normal.** Como desarrolladores independientes, nuestra aplicación aún no es \"conocida\" por los servidores de Microsoft. La aplicación es 100% segura y no contiene malware.",
+                'download.security.procedure': 'Para continuar con la instalación, simplemente haga clic en **"Más información"** y luego en el botón **"Ejecutar de todas formas"**.',
                 'tasks.title': 'Airdrop y Tareas',
                 'tasks.validate': 'Validar',
                 'tasks.validated': 'Validada',
@@ -1291,7 +1297,6 @@
                 'login.password': 'Contraseña',
                 'login.submit': 'Iniciar sesión',
                 'login.register': 'Registrarse',
-                'login.google': 'Continuar con Google',
                 'login.phantom': 'Continuar con Phantom',
                 'register.title': 'Crear cuenta',
                 'register.username': 'Nombre de usuario',
@@ -1721,47 +1726,58 @@
 
         function getLoginHTML() {
             return `
-                <div class="page-content">
-                    <div class="page-header">
-                        <h1 class="page-title">${t('login.title')}</h1>
+                <div class="page-content futuristic-wallet" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 120px);">
+                    <div class="page-header" style="justify-content: center; margin-bottom: 40px; width: 100%;">
+                        <h1 class="page-title neon-text" style="font-size: 2.5rem; text-transform: uppercase; letter-spacing: 4px; text-align: center; width: 100%;">
+                            ${t('login.title')}
+                        </h1>
                     </div>
-                    <div class="profile-card" style="max-width: 520px; margin: 0 auto;">
-                        <form id="login-form">
-                            <div class="profile-field">
-                                <label for="login-email">${t('login.email')}</label>
-                                <input type="text" id="login-email" required>
-                            </div>
-                            <div class="profile-field">
-                                <label for="login-password">${t('login.password')}</label>
-                                <input type="password" id="login-password" required>
-                            </div>
-                            <!-- Parrainage supprimé -->
-                            <div class="profile-actions">
-                                <button type="submit" class="profile-btn primary">${t('login.submit')}</button>
-                                <button type="button" id="toggle-register" class="profile-btn">${t('login.register')}</button>
-                                <button type="button" id="google-login-btn" class="profile-btn">${t('login.google')}</button>
-                                <button type="button" id="phantom-login-btn" class="profile-btn">${t('login.phantom')}</button>
-                            </div>
-                        </form>
-                        <form id="register-form" style="display:none; margin-top: 16px;">
-                            <div class="profile-field">
-                                <label for="register-username">${t('register.username')}</label>
-                                <input type="text" id="register-username" required>
-                            </div>
-                            <div class="profile-field">
-                                <label for="register-email">${t('register.email')}</label>
-                                <input type="email" id="register-email" required>
-                            </div>
-                            <div class="profile-field">
-                                <label for="register-password">${t('register.password')}</label>
-                                <input type="password" id="register-password" required>
-                            </div>
-                            <!-- Parrainage supprimé -->
-                            <div class="profile-actions">
-                                <button type="submit" class="profile-btn primary">${t('register.submit')}</button>
-                                <button type="button" id="toggle-login" class="profile-btn">${t('register.back')}</button>
-                            </div>
-                        </form>
+                    
+                    <div class="wallet-layout" style="display: flex; justify-content: center; width: 100%; margin: 0;">
+                        <div class="wallet-main-card glass-card neon-border-green" style="max-width: 480px; width: 100%; margin: 0;">
+                            <form id="login-form">
+                                <div class="staking-actions" style="margin-top: 0;">
+                                    <div class="profile-field" style="margin-bottom: 20px;">
+                                        <label for="login-email" style="color: #9ca3af; margin-bottom: 8px; display: block;">${t('login.email')}</label>
+                                        <input type="text" id="login-email" required style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid #374151; color: #fff; padding: 12px; border-radius: 12px; outline: none;">
+                                    </div>
+                                    <div class="profile-field" style="margin-bottom: 30px;">
+                                        <label for="login-password" style="color: #9ca3af; margin-bottom: 8px; display: block;">${t('login.password')}</label>
+                                        <input type="password" id="login-password" required style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid #374151; color: #fff; padding: 12px; border-radius: 12px; outline: none;">
+                                    </div>
+                                    
+                                    <div class="button-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 0;">
+                                        <button type="submit" class="neon-button primary" style="width: 100%;">${t('login.submit')}</button>
+                                        <div style="display: flex; gap: 12px; width: 100%;">
+                                            <button type="button" id="toggle-register" class="neon-button outline" style="flex: 1;">${t('login.register')}</button>
+                                            <button type="button" id="phantom-login-btn" class="neon-button secondary" style="flex: 1;">${t('login.phantom')}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <form id="register-form" style="display:none; margin-top: 0;">
+                                <div class="staking-actions" style="margin-top: 0;">
+                                    <div class="profile-field" style="margin-bottom: 20px;">
+                                        <label for="register-username" style="color: #9ca3af; margin-bottom: 8px; display: block;">${t('register.username')}</label>
+                                        <input type="text" id="register-username" required style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid #374151; color: #fff; padding: 12px; border-radius: 12px; outline: none;">
+                                    </div>
+                                    <div class="profile-field" style="margin-bottom: 20px;">
+                                        <label for="register-email" style="color: #9ca3af; margin-bottom: 8px; display: block;">${t('register.email')}</label>
+                                        <input type="email" id="register-email" required style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid #374151; color: #fff; padding: 12px; border-radius: 12px; outline: none;">
+                                    </div>
+                                    <div class="profile-field" style="margin-bottom: 30px;">
+                                        <label for="register-password" style="color: #9ca3af; margin-bottom: 8px; display: block;">${t('register.password')}</label>
+                                        <input type="password" id="register-password" required style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid #374151; color: #fff; padding: 12px; border-radius: 12px; outline: none;">
+                                    </div>
+                                    
+                                    <div class="button-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 0;">
+                                        <button type="submit" class="neon-button primary" style="width: 100%;">${t('register.submit')}</button>
+                                        <button type="button" id="toggle-login" class="neon-button outline" style="width: 100%;">${t('register.back')}</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1773,7 +1789,6 @@
 
             const emailInput = document.getElementById('login-email');
             const passInput = document.getElementById('login-password');
-            const googleBtn = document.getElementById('google-login-btn');
             const phantomBtn = document.getElementById('phantom-login-btn');
             const urlParams = new URL(window.location.href).searchParams;
             const referralCodeFromUrl = urlParams.get('ref') || null;
@@ -1843,154 +1858,6 @@
                     alert('Erreur de connexion au serveur');
                 });
             });
-
-            if (googleBtn) {
-                googleBtn.addEventListener('click', () => {
-                    const clientIdStored = (window.GOOGLE_CLIENT_ID || localStorage.getItem('googleClientId') || '').trim();
-                    const tryStartGis = (clientId) => {
-                        const s = document.createElement('script');
-                        s.src = 'https://accounts.google.com/gsi/client';
-                        s.onload = () => {
-                            try {
-                                google.accounts.id.initialize({
-                                    client_id: clientId,
-                                    callback: (resp) => {
-                                        if (!resp || !resp.credential) { alert('Échec Google'); return; }
-                                        fetch(`${API_BASE}/api/auth/google-oauth`, {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ idToken: resp.credential })
-                                        })
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            if (data.token) {
-                                                localStorage.setItem('token', data.token);
-                                                if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-                                                currentPage = 'overview';
-                                                renderPage();
-                                                refreshHeader();
-                                            } else {
-                                                alert(data.error || 'Connexion Google impossible');
-                                            }
-                                        })
-                                        .catch(() => alert('Erreur de connexion au serveur Google'));
-                                    },
-                                    auto_select: true,
-                                });
-                                google.accounts.id.prompt((notification) => {
-                                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                                        console.log('Google prompt not displayed, offering email fallback');
-                                        const email = prompt("La connexion Google automatique a échoué (Origin Mismatch). Entrez votre adresse email Google pour vous connecter :");
-                                        if (email && email.includes('@')) {
-                                            fetch(`${API_BASE}/api/auth/google-login`, {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ email: email.trim() })
-                                            })
-                                            .then(res => res.json())
-                                            .then(data => {
-                                                if (data.token) {
-                                                    localStorage.setItem('token', data.token);
-                                                    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-                                                    currentPage = 'overview';
-                                                    renderPage();
-                                                    refreshHeader();
-                                                } else {
-                                                    alert(data.error || 'Connexion Google impossible');
-                                                }
-                                            })
-                                            .catch(() => alert('Erreur de connexion au serveur'));
-                                        }
-                                    }
-                                });
-                            } catch (e) {
-                                console.error('GIS Error:', e);
-                                const email = prompt("Google Identity indisponible. Entrez votre adresse email Google pour vous connecter :");
-                                if (email && email.includes('@')) {
-                                    fetch(`${API_BASE}/api/auth/google-login`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email: email.trim() })
-                                    })
-                                    .then(res => res.json())
-                                    .then(data => {
-                                        if (data.token) {
-                                            localStorage.setItem('token', data.token);
-                                            if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-                                            currentPage = 'overview';
-                                            renderPage();
-                                            refreshHeader();
-                                        } else {
-                                            alert(data.error || 'Connexion Google impossible');
-                                        }
-                                    })
-                                    .catch(() => alert('Erreur de connexion au serveur'));
-                                }
-                            }
-                        };
-                        document.head.appendChild(s);
-                    };
-                    if (!clientIdStored) {
-                        fetch(`${API_BASE}/api/public/config`)
-                          .then(r => r.json())
-                          .then(c => {
-                              if (c.googleClientId) {
-                                  localStorage.setItem('googleClientId', c.googleClientId);
-                                  tryStartGis(c.googleClientId);
-                                  return;
-                              }
-                              const deviceId = localStorage.getItem('googleGuestId') || (localStorage.setItem('googleGuestId', Math.random().toString(36).slice(2)), localStorage.getItem('googleGuestId'));
-                              try { window.open('https://accounts.google.com/AccountChooser?continue=https://www.google.com', '_blank'); } catch {}
-                              fetch(`${API_BASE}/api/auth/google-login`, {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ email: null, deviceId })
-                              })
-                              .then(res => res.json())
-                              .then(data => {
-                                  if (data.token) {
-                                      localStorage.setItem('token', data.token);
-                                      if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-                                      currentPage = 'overview';
-                                      renderPage();
-                                      refreshHeader();
-                                  } else {
-                                      alert(data.error || 'Connexion Google impossible');
-                                  }
-                              })
-                              .catch(() => {
-                                  alert('Erreur de connexion au serveur Google');
-                              });
-                          })
-                          .catch(() => {
-                              const deviceId = localStorage.getItem('googleGuestId') || (localStorage.setItem('googleGuestId', Math.random().toString(36).slice(2)), localStorage.getItem('googleGuestId'));
-                              try { window.open('https://accounts.google.com/AccountChooser?continue=https://www.google.com', '_blank'); } catch {}
-                              fetch(`${API_BASE}/api/auth/google-login`, {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ email: null, deviceId })
-                              })
-                              .then(res => res.json())
-                              .then(data => {
-                                  if (data.token) {
-                                      localStorage.setItem('token', data.token);
-                                      if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-                                      currentPage = 'overview';
-                                      renderPage();
-                                      refreshHeader();
-                                  } else {
-                                      alert(data.error || 'Connexion Google impossible');
-                                  }
-                              })
-                              .catch(() => {
-                                  alert('Erreur de connexion au serveur Google');
-                              });
-                          });
-                        return;
-                    }
-                    tryStartGis(clientIdStored);
-                });
-            }
 
             if (phantomBtn) {
                 phantomBtn.addEventListener('click', async () => {
@@ -4145,6 +4012,13 @@ print(r.json())</code></pre>
                                     <li>${t('download.recommended.step5')}</li>
                                     <li>${t('download.recommended.step6')}</li>
                                 </ol>
+                            </div>
+                        </div>
+                        <div class="api-card">
+                            <h3>${t('download.security.title')}</h3>
+                            <p>${t('download.security.desc')}</p>
+                            <div class="notice-box-glass" style="margin-top:15px; border-color:rgba(16, 185, 129, 0.3); background:rgba(16, 185, 129, 0.05); color:#86efac;">
+                                ${t('download.security.procedure')}
                             </div>
                         </div>
                         <div class="api-card">
