@@ -1844,6 +1844,13 @@
                     } else if (ok && data.token) {
                         localStorage.setItem('token', data.token);
                         if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+                        
+                        const urlParams = new URL(window.location.href).searchParams;
+                        if (urlParams.get('desktop') === 'true') {
+                            window.location.reload(); // Let DOMContentLoaded handle the deep link
+                            return;
+                        }
+                        
                         currentPage = 'overview';
                         renderPage();
                         refreshHeader();
@@ -1877,6 +1884,13 @@
                         if (data.token) {
                             localStorage.setItem('token', data.token);
                             if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+                            
+                            const urlParams = new URL(window.location.href).searchParams;
+                            if (urlParams.get('desktop') === 'true') {
+                                window.location.reload();
+                                return;
+                            }
+                            
                             currentPage = 'overview';
                             renderPage();
                             refreshHeader();
@@ -1927,6 +1941,13 @@
                         if (data.token) {
                             localStorage.setItem('token', data.token);
                             if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+                            
+                            const urlParams = new URL(window.location.href).searchParams;
+                            if (urlParams.get('desktop') === 'true') {
+                                window.location.reload();
+                                return;
+                            }
+                            
                             currentPage = 'overview';
                             renderPage();
                             refreshHeader();
@@ -5578,8 +5599,38 @@ function initializeShopPage() {
             await ensureValidSession();
             const urlParams = new URL(window.location.href).searchParams;
             const pageParam = urlParams.get('page');
+            const isDesktop = urlParams.get('desktop') === 'true';
             
-            if (!localStorage.getItem('token')) {
+            const token = localStorage.getItem('token');
+            if (isDesktop && token) {
+                const refreshToken = localStorage.getItem('refreshToken');
+                const user = localStorage.getItem('user');
+                const deepLink = `revolution-network://auth?token=${encodeURIComponent(token)}&refreshToken=${encodeURIComponent(refreshToken || '')}&user=${encodeURIComponent(user || '')}`;
+                
+                // Try to open deep link immediately
+                window.location.assign(deepLink);
+                
+                // Show a message to the user
+                setTimeout(() => {
+                    const content = document.getElementById('pageContent');
+                    if (content) {
+                        content.innerHTML = `
+                            <div class="page-content futuristic-wallet" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 120px);">
+                                <div class="glass-card neon-border-green" style="padding: 40px; text-align: center; max-width: 500px;">
+                                    <div class="loader-ring" style="margin: 0 auto 20px;"></div>
+                                    <h2 class="neon-text" style="margin-bottom: 20px;">Connexion en cours...</h2>
+                                    <p style="color: #9ca3af; margin-bottom: 24px;">Votre navigateur tente d'ouvrir l'application Revolution Network Node.</p>
+                                    <a href="${deepLink}" class="neon-button primary" style="text-decoration: none; display: inline-block;">Ouvrir l'application manuellement</a>
+                                    <p style="margin-top: 20px; font-size: 0.85em; color: #6b7280;">Si l'application ne s'ouvre pas, assurez-vous de l'avoir installée.</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }, 100);
+                return;
+            }
+            
+            if (!token) {
                 currentPage = 'login';
             } else if (pageParam && ['overview', 'nodes', 'referrals', 'profile', 'shop', 'download', 'enterpriseApi', 'tasks', 'wallet', 'leaderboard'].includes(pageParam)) {
                 currentPage = pageParam;
