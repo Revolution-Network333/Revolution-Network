@@ -2390,82 +2390,80 @@
         }
 
         function getReferralsHTML() {
-            const referrals = [];
-
-            let referralsList = referrals.map(ref => {
-                const initials = ref.name.split(' ').map(n => n[0]).join('');
-                return `
-                    <div class="referral-item">
-                        <div class="referral-avatar">${initials}</div>
-                        <div class="referral-info">
-                            <div class="referral-name">${ref.name}</div>
-                            <div class="referral-joined">${t('referrals.joined')} ${ref.joined}</div>
-                        </div>
-                        <div class="referral-points">${ref.points} pts</div>
-                        <div class="referral-status ${ref.status}">
-                            ${ref.status === 'active' ? t('referrals.status.active') : t('referrals.status.inactive')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
             return `
-                <div class="page-content">
-                    <div class="page-header">
-                        <h1 class="page-title">${t('referrals.title')}</h1>
+                <div class="page-content futuristic-referral">
+                    <div class="page-header" style="justify-content: center; margin-bottom: 40px;">
+                        <h1 class="page-title neon-text" style="font-size: 2.5rem; text-transform: uppercase; letter-spacing: 4px;">
+                            ${t('referrals.title')}
+                        </h1>
                     </div>
 
-                    <div class="referral-stats-grid">
-                        <div class="referral-stat">
-                            <svg class="referral-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            <div class="referral-stat-info">
-                                <div class="referral-stat-value">0</div>
-                                <div class="referral-stat-label">${t('referrals.stats.total')}</div>
+                    <div class="referral-layout">
+                        <!-- Top Row: Stats -->
+                        <div class="referral-stats-grid-futuristic">
+                            <div class="glass-card neon-border-blue stat-box">
+                                <div class="stat-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value neon-text-blue" id="referral-total-count">0</div>
+                                    <div class="stat-label">${t('referrals.stats.total')}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="referral-stat">
-                            <svg class="referral-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="8" r="7"></circle>
-                                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
-                            </svg>
-                            <div class="referral-stat-info">
-                                <div class="referral-stat-value">0</div>
-                                <div class="referral-stat-label">${t('referrals.stats.points')}</div>
+                            
+                            <div class="glass-card neon-border-green stat-box">
+                                <div class="stat-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="8" r="7"></circle>
+                                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value neon-text-green" id="referral-total-points">0</div>
+                                    <div class="stat-label">${t('referrals.stats.points')}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="referral-stat">
-                            <svg class="referral-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                            </svg>
-                            <div class="referral-stat-info">
-                                <div class="referral-stat-value">0</div>
-                                <div class="referral-stat-label">${t('referrals.stats.active')}</div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="referral-link-section">
-                        <h3>${t('referrals.link.title')}</h3>
-                        <div class="referral-link-box">
-                            <input
-                                type="text"
-                                value=""
-                                class="referral-input"
-                                id="referral-code-input"
-                            />
-                            <button class="copy-btn" onclick="copyReferralLink()">${t('common.copy')}</button>
-                            <button class="profile-btn-secondary" onclick="updateReferralCode()" style="margin-left: 10px;">${t('common.edit')}</button>
+                            <div class="glass-card neon-border-purple stat-box">
+                                <div class="stat-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value neon-text-purple" id="referral-active-count">0</div>
+                                    <div class="stat-label">${t('referrals.stats.active')}</div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="referrals-list">
-                        <h3>${t('referrals.list.title')}</h3>
-                        ${referralsList}
+                        <!-- Link Section -->
+                        <div class="glass-card neon-border-green referral-link-futuristic">
+                            <h2 class="section-title-mini">${t('referrals.link.title')}</h2>
+                            <div class="link-container-glass">
+                                <input type="text" value="" class="referral-input-futuristic" id="referral-code-input" readonly />
+                                <div class="button-group">
+                                    <button class="neon-button primary" onclick="copyReferralLink()">${t('common.copy')}</button>
+                                    <button class="neon-button secondary" onclick="updateReferralCode()">${t('common.edit')}</button>
+                                </div>
+                            </div>
+                            <p class="notice-box-glass" style="margin-top: 20px;">
+                                Partagez votre code pour gagner des bonus sur chaque utilisateur actif parrainé !
+                            </p>
+                        </div>
+
+                        <!-- List Section -->
+                        <div class="glass-card neon-border-blue referrals-list-futuristic">
+                            <h2 class="section-title-mini">${t('referrals.list.title')}</h2>
+                            <div id="referrals-container" class="list-container-glass">
+                                <div class="loading-spinner-glass">Chargement...</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
