@@ -109,6 +109,96 @@ if (sqliteForced || (!connectionString && !shouldUseMySql())) {
       return { sql: translatedSql, params: newParams };
     };
 
+    const rewriteForMySql = (sql) => {
+      let s = String(sql || '');
+      
+      // NEW: Intercept RETURNING here if not handled by query() wrapper
+      const retMatch = s.match(/\s+RETURNING\s+([\s\S]+)$/i);
+      if (retMatch) {
+        s = s.slice(0, retMatch.index).trim();
+      }
+
+      s = s.replace(/^\s*BEGIN\s*;?\s*$/i, 'START TRANSACTION');
+      s = s.replace(/\bALTER\s+TABLE\s+IF\s+EXISTS\s+/gi, 'ALTER TABLE ');
+      s = s.replace(/\bCREATE\s+UNIQUE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+/gi, 'CREATE UNIQUE INDEX ');
+      s = s.replace(/\bCREATE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+/gi, 'CREATE INDEX ');
+      s = s.replace(/\bADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+/gi, 'ADD COLUMN ');
+      s = s.replace(/\bCOUNT\(\*\)::int\b/gi, 'CAST(COUNT(*) AS SIGNED)');
+      s = s.replace(/::int\b/gi, '');
+      s = s.replace(/metadata::json->>'campaign_id'/gi, "JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.campaign_id'))");
+      s = s.replace(/EXTRACT\s*\(\s*DAY\s+FROM\s*\(\s*NOW\(\)\s*-\s*([^)]+)\)\s*\)/gi, 'TIMESTAMPDIFF(DAY, $1, NOW())');
+      s = s.replace(/EXTRACT\s*\(\s*EPOCH\s+FROM\s*\(([^)]+)\s*-\s*([^)]+)\)\)/gi, 'TIMESTAMPDIFF(SECOND, $2, $1)');
+      s = s.replace(/EXTRACT\s*\(\s*EPOCH\s+FROM\s*([^)]+)\)/gi, 'UNIX_TIMESTAMP($1)'); // Fallback for simple cases if needed
+
+      // MySQL reserved keywords and PostgreSQL specific syntax
+      s = s.replace(/(\b)rank(\b)/gi, (m, p1, p2, offset, str) => {
+        const prev = str[offset - 1];
+        const next = str[offset + m.length];
+        if (prev === '`' && next === '`') return m;
+        return '`rank`';
+      });
+      s = s.replace(/to_char\(([^,]+)::date,\s*'YYYY-MM-DD'\)/gi, 'DATE_FORMAT($1, "%Y-%m-%d")');
+      s = s.replace(/to_char\(([^,]+),\s*'YYYY-MM-DD'\)/gi, 'DATE_FORMAT($1, "%Y-%m-%d")');
+      s = s.replace(/to_char\(date_trunc\('year',\s*([^)]+)\),\s*'YYYY'\)/gi, 'DATE_FORMAT($1, "%Y")');
+      s = s.replace(/to_char\(date_trunc\('month',\s*([^)]+)\),\s*'YYYY-MM'\)/gi, 'DATE_FORMAT($1, "%Y-%m")');
+      s = s.replace(/to_char\(date_trunc\('week',\s*([^)]+)\),\s*'IYYY-"W"IW'\)/gi, 'DATE_FORMAT($1, "%x-W%v")');
+      s = s.replace(/date_trunc\('year',\s*([^)]+)\)/gi, 'STR_TO_DATE(DATE_FORMAT($1, "%Y-01-01"), "%Y-%m-%d")');
+      s = s.replace(/date_trunc\('month',\s*([^)]+)\)/gi, 'STR_TO_DATE(DATE_FORMAT($1, "%Y-%m-01"), "%Y-%m-%d")');
+      s = s.replace(/date_trunc\('week',\s*([^)]+)\)/gi, 'STR_TO_DATE(DATE_FORMAT($1, "%x%v1"), "%x%v%w")');
+      s = s.replace(/([^(\s]+)::date\b/gi, 'DATE($1)');
+      s = s.replace(/::date\b/gi, '');
+      s = s.replace(/\bCURRENT_DATE\b/gi, 'CURDATE()');
+      s = s.replace(/\bCURRENT_TIMESTAMP\b/gi, 'NOW()');
+      s = s.replace(/INTERVAL\s+'(\d+)\s+days?'/gi, 'INTERVAL $1 DAY');
+      s = s.replace(/INTERVAL\s+'(\d+)\s+weeks?'/gi, 'INTERVAL $1 WEEK');
+      s = s.replace(/INTERVAL\s+'(\d+)\s+months?'/gi, 'INTERVAL $1 MONTH');
+      s = s.replace(/INTERVAL\s+'(\d+)\s+years?'/gi, 'INTERVAL $1 YEAR');
+      s = s.replace(/DATE\(([^)]+)\)\s*=\s*p_date/gi, 'DATE($1) = p_date'); // Ensure DATE() is used for MySQL if needed, but p_date might be a param.
+      
+      // PostgreSQL specific types
+      s = s.replace(/\bJSONB\b/gi, 'JSON');
+      s = s.replace(/\bSERIAL\b/gi, 'BIGINT UNSIGNED AUTO_INCREMENT');
+      s = s.replace(/\bTIMESTAMP\b/gi, 'DATETIME');
+
+      if (/\bON\s+CONFLICT\b/i.test(s)) {
+        const doNothing = s.match(/\bON\s+CONFLICT\b[\s\S]*?\bDO\s+NOTHING\b/i);
+        if (doNothing && /^\s*INSERT\b/i.test(s)) {
+          s = s.replace(/\bON\s+CONFLICT\b[\s\S]*?\bDO\s+NOTHING\b/i, '');
+          s = s.replace(/^\s*INSERT\s+INTO\b/i, 'INSERT IGNORE INTO');
+        } else {
+          const doUpdate = s.match(/\bON\s+CONFLICT\b[\s\S]*?\bDO\s+UPDATE\s+SET\b/i);
+          if (doUpdate && /^\s*INSERT\b/i.test(s)) {
+            s = s
+              .replace(/\bON\s+CONFLICT\b\s*(\([^)]+\))?\s*\bDO\s+UPDATE\s+SET\b/i, 'ON DUPLICATE KEY UPDATE')
+              .replace(/\bEXCLUDED\.(\w+)\b/gi, 'VALUES($1)');
+          }
+        }
+      }
+
+      return s;
+    };
+
+    const parseReturning = (sql) => {
+      const m = String(sql || '').match(/\s+RETURNING\s+([\s\S]+)$/i);
+      if (!m) return null;
+      return { returning: m[1].trim(), baseSql: String(sql).slice(0, m.index).trim() };
+    };
+
+    const extractWhereForReturning = (sqlNoReturning) => {
+      const upper = sqlNoReturning.toUpperCase();
+      const whereIdx = upper.lastIndexOf(' WHERE ');
+      if (whereIdx === -1) return null;
+      return sqlNoReturning.slice(whereIdx + 7).trim();
+    };
+
+    const getParamValuesForClause = (clauseSql, params) => {
+      const nums = String(clauseSql || '').match(/\$(\d+)/g) || [];
+      return nums.map((t) => {
+        const n = Number.parseInt(t.slice(1), 10);
+        return params[n - 1];
+      });
+    };
+
     const query = async (sql, params = []) => {
       let returningInfo = parseReturning(sql);
       
