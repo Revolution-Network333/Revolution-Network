@@ -84,96 +84,29 @@ if (sqliteForced || (!connectionString && !shouldUseMySql())) {
       enableKeepAlive: true,
     });
 
-    const translatePgParamsToMySql = (sql) => String(sql || '').replace(/\$\d+/g, '?');
-
-    const rewriteForMySql = (sql) => {
+    const translatePgParamsToMySql = (sql, params) => {
       let s = String(sql || '');
-      
-      // NEW: Intercept RETURNING here if not handled by query() wrapper
-      const retMatch = s.match(/\s+RETURNING\s+([\s\S]+)$/i);
-      if (retMatch) {
-        s = s.slice(0, retMatch.index).trim();
-      }
+      const p = [...(params || [])];
+      const matches = s.match(/\$\d+/g) || [];
+      if (matches.length === 0) return { sql: s, params: p };
 
-      s = s.replace(/^\s*BEGIN\s*;?\s*$/i, 'START TRANSACTION');
-      s = s.replace(/\bALTER\s+TABLE\s+IF\s+EXISTS\s+/gi, 'ALTER TABLE ');
-      s = s.replace(/\bCREATE\s+UNIQUE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+/gi, 'CREATE UNIQUE INDEX ');
-      s = s.replace(/\bCREATE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+/gi, 'CREATE INDEX ');
-      s = s.replace(/\bADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+/gi, 'ADD COLUMN ');
-      s = s.replace(/\bCOUNT\(\*\)::int\b/gi, 'CAST(COUNT(*) AS SIGNED)');
-      s = s.replace(/::int\b/gi, '');
-      s = s.replace(/metadata::json->>'campaign_id'/gi, "JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.campaign_id'))");
-      s = s.replace(/EXTRACT\s*\(\s*DAY\s+FROM\s*\(\s*NOW\(\)\s*-\s*([^)]+)\)\s*\)/gi, 'TIMESTAMPDIFF(DAY, $1, NOW())');
-      s = s.replace(/EXTRACT\s*\(\s*EPOCH\s+FROM\s*\(([^)]+)\s*-\s*([^)]+)\)\)/gi, 'TIMESTAMPDIFF(SECOND, $2, $1)');
-      s = s.replace(/EXTRACT\s*\(\s*EPOCH\s+FROM\s*([^)]+)\)/gi, 'UNIX_TIMESTAMP($1)'); // Fallback for simple cases if needed
-
-      // MySQL reserved keywords and PostgreSQL specific syntax
-      s = s.replace(/(\b)rank(\b)/gi, (m, p1, p2, offset, str) => {
-        const prev = str[offset - 1];
-        const next = str[offset + m.length];
-        if (prev === '`' && next === '`') return m;
-        return '`rank`';
-      });
-      s = s.replace(/to_char\(([^,]+)::date,\s*'YYYY-MM-DD'\)/gi, 'DATE_FORMAT($1, "%Y-%m-%d")');
-      s = s.replace(/to_char\(([^,]+),\s*'YYYY-MM-DD'\)/gi, 'DATE_FORMAT($1, "%Y-%m-%d")');
-      s = s.replace(/to_char\(date_trunc\('year',\s*([^)]+)\),\s*'YYYY'\)/gi, 'DATE_FORMAT($1, "%Y")');
-      s = s.replace(/to_char\(date_trunc\('month',\s*([^)]+)\),\s*'YYYY-MM'\)/gi, 'DATE_FORMAT($1, "%Y-%m")');
-      s = s.replace(/to_char\(date_trunc\('week',\s*([^)]+)\),\s*'IYYY-"W"IW'\)/gi, 'DATE_FORMAT($1, "%x-W%v")');
-      s = s.replace(/date_trunc\('year',\s*([^)]+)\)/gi, 'STR_TO_DATE(DATE_FORMAT($1, "%Y-01-01"), "%Y-%m-%d")');
-      s = s.replace(/date_trunc\('month',\s*([^)]+)\)/gi, 'STR_TO_DATE(DATE_FORMAT($1, "%Y-%m-01"), "%Y-%m-%d")');
-      s = s.replace(/date_trunc\('week',\s*([^)]+)\)/gi, 'STR_TO_DATE(DATE_FORMAT($1, "%x%v1"), "%x%v%w")');
-      s = s.replace(/([^(\s]+)::date\b/gi, 'DATE($1)');
-      s = s.replace(/::date\b/gi, '');
-      s = s.replace(/\bCURRENT_DATE\b/gi, 'CURDATE()');
-      s = s.replace(/\bCURRENT_TIMESTAMP\b/gi, 'NOW()');
-      s = s.replace(/INTERVAL\s+'(\d+)\s+days?'/gi, 'INTERVAL $1 DAY');
-      s = s.replace(/INTERVAL\s+'(\d+)\s+weeks?'/gi, 'INTERVAL $1 WEEK');
-      s = s.replace(/INTERVAL\s+'(\d+)\s+months?'/gi, 'INTERVAL $1 MONTH');
-      s = s.replace(/INTERVAL\s+'(\d+)\s+years?'/gi, 'INTERVAL $1 YEAR');
-      s = s.replace(/DATE\(([^)]+)\)\s*=\s*p_date/gi, 'DATE($1) = p_date'); // Ensure DATE() is used for MySQL if needed, but p_date might be a param.
-      
-      // PostgreSQL specific types
-      s = s.replace(/\bJSONB\b/gi, 'JSON');
-      s = s.replace(/\bSERIAL\b/gi, 'BIGINT UNSIGNED AUTO_INCREMENT');
-      s = s.replace(/\bTIMESTAMP\b/gi, 'DATETIME');
-
-      if (/\bON\s+CONFLICT\b/i.test(s)) {
-        const doNothing = s.match(/\bON\s+CONFLICT\b[\s\S]*?\bDO\s+NOTHING\b/i);
-        if (doNothing && /^\s*INSERT\b/i.test(s)) {
-          s = s.replace(/\bON\s+CONFLICT\b[\s\S]*?\bDO\s+NOTHING\b/i, '');
-          s = s.replace(/^\s*INSERT\s+INTO\b/i, 'INSERT IGNORE INTO');
-        } else {
-          const doUpdate = s.match(/\bON\s+CONFLICT\b[\s\S]*?\bDO\s+UPDATE\s+SET\b/i);
-          if (doUpdate && /^\s*INSERT\b/i.test(s)) {
-            s = s
-              .replace(/\bON\s+CONFLICT\b\s*(\([^)]+\))?\s*\bDO\s+UPDATE\s+SET\b/i, 'ON DUPLICATE KEY UPDATE')
-              .replace(/\bEXCLUDED\.(\w+)\b/gi, 'VALUES($1)');
-          }
+      // Map of $n to value
+      const paramMap = new Map();
+      matches.forEach(m => {
+        const idx = parseInt(m.slice(1)) - 1;
+        if (idx >= 0 && idx < p.length) {
+          paramMap.set(m, p[idx]);
         }
-      }
-
-      return s;
-    };
-
-    const parseReturning = (sql) => {
-      const m = String(sql || '').match(/\s+RETURNING\s+([\s\S]+)$/i);
-      if (!m) return null;
-      return { returning: m[1].trim(), baseSql: String(sql).slice(0, m.index).trim() };
-    };
-
-    const extractWhereForReturning = (sqlNoReturning) => {
-      const upper = sqlNoReturning.toUpperCase();
-      const whereIdx = upper.lastIndexOf(' WHERE ');
-      if (whereIdx === -1) return null;
-      return sqlNoReturning.slice(whereIdx + 7).trim();
-    };
-
-    const getParamValuesForClause = (clauseSql, params) => {
-      const nums = String(clauseSql || '').match(/\$(\d+)/g) || [];
-      return nums.map((t) => {
-        const n = Number.parseInt(t.slice(1), 10);
-        return params[n - 1];
       });
+
+      const newParams = [];
+      const translatedSql = s.replace(/\$\d+/g, (match) => {
+        const val = paramMap.get(match);
+        newParams.push(val);
+        return '?';
+      });
+
+      return { sql: translatedSql, params: newParams };
     };
 
     const query = async (sql, params = []) => {
@@ -197,8 +130,9 @@ if (sqliteForced || (!connectionString && !shouldUseMySql())) {
         if (/^\s*INSERT\b/i.test(baseSql)) {
           const tableMatch = baseSql.match(/^\s*INSERT\s+INTO\s+([`"\w.]+)/i);
           const table = tableMatch ? tableMatch[1] : null;
-          const normalized = rewriteForMySql(translatePgParamsToMySql(baseSql));
-          const [result] = await pool.query(normalized, params);
+          const { sql: translatedSql, params: translatedParams } = translatePgParamsToMySql(baseSql, params);
+          const normalized = rewriteForMySql(translatedSql);
+          const [result] = await pool.query(normalized, translatedParams);
           const insertId = result && typeof result.insertId === 'number' ? result.insertId : null;
           if (!table || !insertId) {
             return { rows: [{ id: insertId }], rowCount: result?.affectedRows || 0 };
@@ -216,16 +150,18 @@ if (sqliteForced || (!connectionString && !shouldUseMySql())) {
           const table = tableMatch ? tableMatch[1] : null;
           const whereClausePg = extractWhereForReturning(baseSql);
           const whereParams = whereClausePg ? getParamValuesForClause(whereClausePg, params) : [];
-          const whereClauseMySql = whereClausePg ? rewriteForMySql(translatePgParamsToMySql(whereClausePg)) : null;
+          const { sql: translatedWhereSql, params: translatedWhereParams } = translatePgParamsToMySql(whereClausePg, whereParams);
+          const whereClauseMySql = whereClausePg ? rewriteForMySql(translatedWhereSql) : null;
 
-          const normalized = rewriteForMySql(translatePgParamsToMySql(baseSql));
-          const [result] = await pool.query(normalized, params);
+          const { sql: translatedSql, params: translatedParams } = translatePgParamsToMySql(baseSql, params);
+          const normalized = rewriteForMySql(translatedSql);
+          const [result] = await pool.query(normalized, translatedParams);
 
           if (!table || !whereClauseMySql) {
             return { rows: [], rowCount: result?.affectedRows || 0 };
           }
           const cols = returning === '*' ? '*' : returning;
-          const [rows] = await pool.query(`SELECT ${cols} FROM ${table} WHERE ${whereClauseMySql}`, whereParams);
+          const [rows] = await pool.query(`SELECT ${cols} FROM ${table} WHERE ${whereClauseMySql}`, translatedWhereParams);
           return { rows: rows || [], rowCount: Array.isArray(rows) ? rows.length : 0 };
         }
 
@@ -234,33 +170,31 @@ if (sqliteForced || (!connectionString && !shouldUseMySql())) {
           const table = tableMatch ? tableMatch[1] : null;
           const whereClausePg = extractWhereForReturning(baseSql);
           const whereParams = whereClausePg ? getParamValuesForClause(whereClausePg, params) : [];
-          const whereClauseMySql = whereClausePg ? rewriteForMySql(translatePgParamsToMySql(whereClausePg)) : null;
+          const { sql: translatedWhereSql, params: translatedWhereParams } = translatePgParamsToMySql(whereClausePg, whereParams);
+          const whereClauseMySql = whereClausePg ? rewriteForMySql(translatedWhereSql) : null;
 
-          const normalized = rewriteForMySql(translatePgParamsToMySql(baseSql));
-          const [result] = await pool.query(normalized, params);
+          const { sql: translatedSql, params: translatedParams } = translatePgParamsToMySql(baseSql, params);
+          const normalized = rewriteForMySql(translatedSql);
+          const [result] = await pool.query(normalized, translatedParams);
 
           const rowCount = result?.affectedRows || 0;
           if (rowCount === 0) return { rows: [], rowCount: 0 };
 
-          // For DELETE ... RETURNING, we cannot select after delete.
-          // However, if we're only returning 'id', we might have it in params if it was a 'WHERE id = ?'
-          // For simplicity, if we are returning 'id' and it was a direct ID delete, we can mock it.
-          // Otherwise, we just return empty rows but with correct rowCount.
           if (returning.toLowerCase() === 'id' && whereClauseMySql && whereClauseMySql.includes('id = ?')) {
-             // Find the index of 'id = ?' in whereClauseMySql to get the correct param
              const parts = whereClauseMySql.split(/\bAND\b/i);
              const idPartIdx = parts.findIndex(p => p.toLowerCase().includes('id = ?'));
-             if (idPartIdx !== -1 && whereParams[idPartIdx] !== undefined) {
-                return { rows: [{ id: whereParams[idPartIdx] }], rowCount };
+             if (idPartIdx !== -1 && translatedWhereParams[idPartIdx] !== undefined) {
+                return { rows: [{ id: translatedWhereParams[idPartIdx] }], rowCount };
              }
           }
           return { rows: [], rowCount };
         }
       }
 
-      const normalized = rewriteForMySql(translatePgParamsToMySql(sql));
+      const { sql: translatedSql, params: translatedParams } = translatePgParamsToMySql(sql, params);
+      const normalized = rewriteForMySql(translatedSql);
       try {
-        const [rowsOrResult] = await pool.query(normalized, params);
+        const [rowsOrResult] = await pool.query(normalized, translatedParams);
         if (Array.isArray(rowsOrResult)) return { rows: rowsOrResult, rowCount: rowsOrResult.length };
         const rowCount = typeof rowsOrResult?.affectedRows === 'number' ? rowsOrResult.affectedRows : 0;
         const insertId = typeof rowsOrResult?.insertId === 'number' ? rowsOrResult.insertId : undefined;
@@ -286,8 +220,9 @@ if (sqliteForced || (!connectionString && !shouldUseMySql())) {
       const conn = await pool.getConnection();
       return {
         query: async (sql, params) => {
-          const normalized = rewriteForMySql(translatePgParamsToMySql(sql));
-          const [rowsOrResult] = await conn.query(normalized, params || []);
+          const { sql: translatedSql, params: translatedParams } = translatePgParamsToMySql(sql, params);
+          const normalized = rewriteForMySql(translatedSql);
+          const [rowsOrResult] = await conn.query(normalized, translatedParams || []);
           if (Array.isArray(rowsOrResult)) return { rows: rowsOrResult, rowCount: rowsOrResult.length };
           const rowCount = typeof rowsOrResult?.affectedRows === 'number' ? rowsOrResult.affectedRows : 0;
           const insertId = typeof rowsOrResult?.insertId === 'number' ? rowsOrResult.insertId : undefined;
