@@ -1,0 +1,15 @@
+{
+  "name": "revolution-network",
+  "version": "1.0.0",
+  "description": "Root package for Revolution Network",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "build": "cd backend && npm install",
+    "postinstall": "cd backend && npm install"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  }
+}
